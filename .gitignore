@@ -1,0 +1,147 @@
+# ================================================
+# 🌈 Flutter / Dart / Android / iOS / Web / IDE 공통 무시 규칙
+# ================================================
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ================================================
+# 🧠 IDE / Editor 관련
+# ================================================
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# ================================================
+# 🧩 Flutter / Dart / Pub 관련
+# ================================================
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+coverage/
+build/
+flutter_*.png
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Generated plugin registrant
+lib/generated_plugin_registrant.dart
+
+# ================================================
+# 🤖 Android 관련
+# ================================================
+/android/.gradle/
+/android/local.properties
+/android/key.properties
+/android/gradlew
+/android/gradlew.bat
+/android/gradle/
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/app/build/
+
+# ================================================
+# 🍎 iOS 관련
+# ================================================
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/Runner/GeneratedPluginRegistrant.*
+ios/.symlinks/
+ios/build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ================================================
+# 🪟 Windows 관련
+# ================================================
+windows/flutter/ephemeral/
+windows/build/
+
+# ================================================
+# 🐧 Linux 관련
+# ================================================
+linux/flutter/ephemeral/
+linux/build/
+
+# ================================================
+# 🍏 macOS 관련
+# ================================================
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/build/
+
+# ================================================
+# 🌐 Web 관련
+# ================================================
+web/.dart_tool/
+web/.firebase/
+web/build/
+
+# ================================================
+# 🔐 환경 변수 및 민감 정보
+# ================================================
+.env
+.env.*
+*.keystore
+*.pem
+*.p12
+*.jks
+*.cer
+
+# Firebase 관련 파일
+google-services.json
+GoogleService-Info.plist
+firebase.json
+
+# ================================================
+# 💾 시스템 / 임시 / 로그 파일
+# ================================================
+Thumbs.db
+*.tmp
+*.bak
+*.old
+*.swp
+*.swo
+*.orig
+*.lock
+*.cache
+*.zip
+*.tar.gz
+
+# ================================================
+# 🧪 테스트 / 커버리지
+# ================================================
+coverage/
+test/coverage/
+test_results/
+
+# ================================================
+# ⚙️ 패키지 관리
+# ================================================
+pubspec.lock
+
+
+/previews
+.metadata
