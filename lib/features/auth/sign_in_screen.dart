@@ -1,13 +1,31 @@
-import 'package:flutter_diease_app/features/auth/sign_up_screen.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 import '../../constants.dart';
+import '../../core/provider/auth_provider.dart';
 import 'components/sign_in_form.dart';
 import '../home/HomePage.dart';
+import 'package:flutter_diease_app/features/auth/sign_up_screen.dart';
 
-class SignInScreen extends StatelessWidget {
-  // It's time to validat the text field
-  final _formKey = GlobalKey<FormState>();
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+class _SignInScreenState extends State<SignInScreen>{
+  final formKey = GlobalKey<FormState>();
+  final idController = TextEditingController();
+  final pwController = TextEditingController();
+
+  bool _loading = false;
+  String? _err;
+
+  @override
+  void dispose() {
+    idController.dispose();
+    pwController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +76,11 @@ class SignInScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: defaultPadding * 2),
                     // 로그인 폼
-                    SignInForm(formKey: _formKey),
+                    SignInForm(
+                      formKey: formKey,
+                      idController: idController,
+                      pwController: pwController,
+                    ),
                     const SizedBox(height: defaultPadding * 2),
                     SizedBox(
                       width: double.infinity,
@@ -73,16 +95,63 @@ class SignInScreen extends StatelessWidget {
                           ),
                           padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                         ),
-                        onPressed: () {
-                          // 로그인 버튼 클릭시 역할에 따라서 메인 페이지 구분해서 보여주기
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => HomePage(role: 'user')), // 로그인 결과 메인 화면으로 => 'role: 'doctor', 'patient', 'admin', 'manager'
-                          );
-                        },
-                        child: Text("로그인", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+                        onPressed: _loading
+                          ? null
+                          : () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            setState(() {
+                              _loading = true;
+                              _err = null;
+                            });
+
+                            try {
+                              await context.read<AuthProvider>().login(
+                                idController.text.trim(),
+                                pwController.text.trim(),
+                              );
+
+                              if (!mounted) return;
+
+                              // 로그인 성공 → 메인 페이지로 이동
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => HomePage(role: context.read<AuthProvider>().user!.role),
+                                ),
+                              );
+                            } catch (e) {
+                              if (mounted) {
+                                setState(() {
+                                  _err = '로그인 실패: ${e.toString()}';
+                                });
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _loading = false;
+                                });
+                              }
+                            }
+                          },
+                          child: Text(_loading ? '로그인 중...' : '로그인', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
                       ),
                     ),
+
+                    if (_err != null) ...[
+                      const SizedBox(height: 8),
+                      Text(_err!,style: const TextStyle(color: Colors.red), ),
+                    ],
+
+                          // 로그인 버튼 클릭시 역할에 따라서 메인 페이지 구분해서 보여주기
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(builder: (context) => HomePage(role: 'patient')), // 로그인 결과 메인 화면으로 => 'role: 'doctor', 'patient', 'admin', 'staff'
+                          // );
+                    //     },
+                    //     child: Text("로그인", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+                    //   ),
+                    // ),
 
 
 

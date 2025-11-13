@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'constants.dart';
+import 'core/provider/auth_provider.dart';
 import 'features/admin/ApprovalPage.dart';
 import 'features/admin/UserListPage.dart';
 import 'features/admin/admin_main_page.dart';
@@ -16,7 +18,14 @@ import 'features/patient/Patient_main_page.dart';
 
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

@@ -28,6 +28,8 @@ lib/
 │  │  ├─ formatters.dart
 │  │  └─ validators.dart       # 미생성
 │  │
+│  ├─ providers/               # 상태 관리
+│  │
 │  └─ widgets/                 # 공용 위젯 (앱 전역에서 재사용)
 │     └─ bottom_nav_bar.dart
 │
