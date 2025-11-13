@@ -4,15 +4,16 @@ import 'package:flutter_svg/svg.dart';
 import '../../constants.dart';
 
 class CategorySection extends StatelessWidget {
-  const CategorySection({super.key});
+  final void Function(String route)? onCategorySelected; // 부모에서 전달됨
+  const CategorySection({super.key, this.onCategorySelected});
 
   @override
   Widget build(BuildContext context) {
     final categories = [
-      {"icon": "assets/icons/Pediatrician.svg", "name": "근처 약국"},
-      {"icon": "assets/icons/Neurosurgeon.svg", "name": "질병정보"},
-      {"icon": "assets/icons/Cardiologist.svg", "name": "내 예약"},
-      {"icon": "assets/icons/Psychiatrist.svg", "name": "진단예측"},
+      {"icon": "assets/icons/Pediatrician.svg", "name": "근처 약국", "route": "/pharmacy"},
+      {"icon": "assets/icons/Neurosurgeon.svg", "name": "질병정보", "route": "/disease"},
+      {"icon": "assets/icons/Cardiologist.svg", "name": "진료 예약", "route": "/myAppointments"},
+      {"icon": "assets/icons/Psychiatrist.svg", "name": "진단결과", "route": "/predictionResult"},
     ];
 
     return Column(
@@ -50,14 +51,24 @@ class CategorySection extends StatelessWidget {
                       )
                     ],
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      //Image.asset(item["icon"]!, height: 40),
-                      SvgPicture.asset(item["icon"]!, height:28),
-                      const SizedBox(height: 8),
-                      Text(item["name"]!, style: const TextStyle(fontSize: 12)),
-                    ],
+                  child : GestureDetector(
+                    onTap: (){
+                      if(item["route"] == "/disease"){
+                        Navigator.of(context, rootNavigator: false).pushNamed(item["route"]!);
+
+                      } else { // 질병정보 외에 메뉴들
+                        onCategorySelected?.call(item["route"]!);
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        //Image.asset(item["icon"]!, height: 40),
+                        SvgPicture.asset(item["icon"]!, height:28),
+                        const SizedBox(height: 8),
+                        Text(item["name"]!, style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
                   ),
                 ),
               );

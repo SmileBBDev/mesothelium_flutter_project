@@ -7,6 +7,9 @@ import '../admin/admin_main_page.dart';
 import '../common/pages/my_info.dart';
 import '../doctor/doctor_main_page.dart';
 import '../patient/Patient_main_page.dart';
+import '../patient/page/MyAppointments.dart';
+import '../patient/page/PharmacyView.dart';
+import '../patient/page/PredictionResult.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
@@ -29,7 +32,13 @@ class _HomePageState extends State<HomePage> {
     // 역할에 따른 footbar 구분
     switch (widget.role) {
       case 'patient':
-        _pages = [PatientMainPage(), MyInfoPage()];
+        _pages = [
+          PatientMainPage(onCategorySelected: _onCategorySelected),
+          PharmacyView(),
+          MyAppointments(),
+          PredictionResult(),
+          MyInfoPage()
+        ];
         _menuList = patientMenu;
         break;
       case 'doctor':
@@ -53,14 +62,30 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // 메뉴 탭 번호 지정
+  void _onCategorySelected(String route) {
+    // 환자 메뉴 탭 이동
+    if (route == '/pharmacy') {
+      setState(() {
+        _selectedIndex = 1; // 약국 탭으로 이동
+      });
+    } else if (route == '/myAppointments') {
+      setState(() {
+        _selectedIndex = 2; // 예약 탭
+      });
+    } else if (route == '/predictionResult') {
+      setState(() {
+        _selectedIndex = 3; // 예측결과 탭
+      });
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: _pages[_selectedIndex],
-        ),
+        child:  _pages[_selectedIndex],
       ),
 
 

@@ -28,16 +28,18 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
 
   @override
   Widget build(BuildContext context){
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        DoctorHeaderSection(),
-        MyScheduleCard(),
-        SizedBox(height: defaultPadding * 2),
-        AiPredictSummary(),
-        SizedBox(height: defaultPadding * 2),
-        //AiPredictSection(),
-      ],
+    return SingleChildScrollView(
+      child:Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          DoctorHeaderSection(),
+          MyScheduleCard(),
+          SizedBox(height: defaultPadding * 2),
+          AiPredictSummary(),
+          SizedBox(height: defaultPadding * 2),
+          //AiPredictSection(),
+        ],
+      ),
     );
   }
 

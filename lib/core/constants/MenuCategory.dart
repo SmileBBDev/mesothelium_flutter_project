@@ -20,6 +20,9 @@ const List<MenuCategory> menu_categories = [
 
 const List<MenuCategory> patientMenu = [
   MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "홈", url: "/patientMain"),
+  MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "근처 약국", url: "/pharmacy"),
+  MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "진료 예약", url: "/myAppointments"),
+  MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "진단 결과", url: "/predictionResult"),
   MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "내 정보", url: "/myInfo"),
 ];
 

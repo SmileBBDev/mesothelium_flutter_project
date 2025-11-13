@@ -21,7 +21,7 @@ lib/
 │  ├─ constants/               # 상수 및 스타일 관련 파일
 │  │  └─ MenuCategory.dart     # 카테고리별 메뉴 지정
 │  │
-│  ├─ services/                # 전역 서비스 (예: API, 로깅, Firebase 등)
+│  ├─ services/                # 전역 서비스 - 비즈니스 로직과 외부 연동 (예: API, 로깅, Firebase 등)
 │  │  └─ flutter_service.dart
 │  │
 │  ├─ utils/                   # 유틸리티 함수 및 포매터
