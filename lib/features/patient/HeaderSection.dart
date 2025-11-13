@@ -26,12 +26,12 @@ class HeaderSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
                       Text(
-                        "Looking For Your Desire Specialist Doctor?",
-                        style: TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                        "저희 병원에서 홍길동 환자분께 추천하는 의사입니다",
+                        style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
                       ),
                       SizedBox(height: 4),
                       Text(
-                        "Dr. Asma Khan",
+                        "김교수",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,

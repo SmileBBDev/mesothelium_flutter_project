@@ -7,9 +7,9 @@ class AvailableDoctorSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doctors = [
-      {"name": "Dr. Serena Gomez", "speciality": "Medicine Specialist", "experience": "8 Years", "patients": "1.08K", "image": "assets/images/search_doc_1.png"},
-      {"name": "Dr. Serena Gomez", "speciality": "Medicine Specialist", "experience": "8 Years", "patients": "1.08K", "image": "assets/images/search_doc_2.png"},
-      {"name": "Dr. Asma Khan", "speciality": "Heart Specialist", "experience": "5 Years", "patients": "2.7K", "image": "assets/images/search_doc_3.png"},
+      {"name": "김교수", "speciality": "Medicine Specialist", "experience": "8 Years", "patients": "1.08K", "image": "assets/images/search_doc_1.png"},
+      {"name": "이교수", "speciality": "Medicine Specialist", "experience": "8 Years", "patients": "1.08K", "image": "assets/images/search_doc_2.png"},
+      {"name": "박교수", "speciality": "Heart Specialist", "experience": "5 Years", "patients": "2.7K", "image": "assets/images/search_doc_3.png"},
     ];
 
     return Column(
@@ -20,7 +20,7 @@ class AvailableDoctorSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text("Available Doctor", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text("진료 가능한 의사정보", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               Text("See All", style: TextStyle(color: Colors.blue)),
             ],
           ),
@@ -50,8 +50,8 @@ class AvailableDoctorSection extends StatelessWidget {
                     Text(doctor["name"]!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     Text(doctor["speciality"]!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     const SizedBox(height: 8),
-                    Text("Experience: ${doctor["experience"]}", style: const TextStyle(fontSize: 12)),
-                    Text("Patients: ${doctor["patients"]}", style: const TextStyle(fontSize: 12)),
+                    Text("경력: ${doctor["experience"]}", style: const TextStyle(fontSize: 12)),
+                    Text("진료 환자: ${doctor["patients"]}", style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               );
