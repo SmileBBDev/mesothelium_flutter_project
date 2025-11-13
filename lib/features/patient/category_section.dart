@@ -23,7 +23,7 @@ class CategorySection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text("Categories", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text("카테고리", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               Text("See All", style: TextStyle(color: Colors.blue)),
             ],
           ),
