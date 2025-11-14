@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/MenuCategory.dart';
+import '../../core/service/auth_service.dart';
 import '../admin/ApprovalPage.dart';
 import '../admin/UserListPage.dart';
 import '../../core/widgets/botton_nav_bar.dart';
@@ -13,10 +14,9 @@ import '../patient/page/PredictionResult.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
-  final String username;
-  final String role;
+  final AuthUser user;
 
-  const HomePage({super.key, required this.role, required this.username});
+  const HomePage({super.key, required this.user});
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     // 역할에 따른 footbar 구분
-    switch (widget.role) {
+    switch (widget.user.role) {
       case 'patient':
         _pages = [
           PatientMainPage(onCategorySelected: _onCategorySelected),
@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
         _menuList = patientMenu;
         break;
       case 'doctor':
-        _pages = [DoctorMainPage(username:widget.username), MyInfoPage()];
+        _pages = [DoctorMainPage(user:widget.user), MyInfoPage()];
         _menuList = doctorMenu;
         break;
       case 'admin':
@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         _menuList = adminMenu;
         break;
       default:
-        _pages = [PatientMainPage(), DoctorMainPage(username:widget.username), AdminMainPage(), MyInfoPage()];
+        _pages = [PatientMainPage(), DoctorMainPage(user:widget.user), AdminMainPage(), MyInfoPage()];
         _menuList = menu_categories;
 
     }

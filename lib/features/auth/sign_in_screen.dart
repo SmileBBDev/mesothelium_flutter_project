@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../config/base_config.dart';
 import '../../constants.dart';
 import '../../core/provider/auth_provider.dart';
+import '../../core/service/auth_service.dart';
 import 'components/sign_in_form.dart';
 import '../home/HomePage.dart';
 import 'package:flutter_diease_app/features/auth/sign_up_screen.dart';
@@ -112,12 +114,16 @@ class _SignInScreenState extends State<SignInScreen>{
                               );
 
                               if (!mounted) return;
+                              await BaseConfig().init();
+
+                              AuthUser user = context.read<AuthProvider>().user!;
 
                               // 로그인 성공 → 메인 페이지로 이동
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => HomePage(role: context.read<AuthProvider>().user!.role, username : context.read<AuthProvider>().user!.username),
+                                  // builder: (_) => HomePage(role: context.read<AuthProvider>().user!.role, username : context.read<AuthProvider>().user!.username),
+                                  builder: (_) => HomePage(user: user)
                                 ),
                               );
                             } catch (e) {

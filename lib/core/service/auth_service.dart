@@ -29,10 +29,6 @@ class AuthService {
 
   // 로그인 API호출
   Future<AuthUser> login(String username, String password) async {
-    print("이게 넘어왔다");
-    print("🔥 baseUrl: ${_api.dio.options.baseUrl}");
-    print(username);
-    print(password);
     try {
       final resp = await _api.dio.post(
         '/api/auth/token/',

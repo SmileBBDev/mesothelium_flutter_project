@@ -5,9 +5,13 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 
 import '../../constants.dart';
+import '../../core/model/patient.dart';
+import '../../core/utils/parseReservationDate.dart';
 
 class MyScheduleCard extends StatefulWidget {
-  const MyScheduleCard({super.key});
+  final int? userId;
+  final List<Patient> patients;
+  const MyScheduleCard({super.key, this.userId, required this.patients});
 
   @override
   State<MyScheduleCard> createState() => _MyScheduleCardState();
@@ -27,44 +31,21 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
     _today = DateTime.now();
     _selectedDate  = DateTime(_today.year, _today.month, _today.day);
 
-    // 진료 일정 더미 데이터
-    _appointments = [
-      Appointment(
-        startTime: DateTime(2025, 11, 12, 9, 0),
-        endTime: DateTime(2025, 11, 12, 9, 30),
-        subject: "김철수",
-        notes: "내과 | 32세 남성",
-        color: Colors.blue,
-      ),
-      Appointment(
-        startTime: DateTime(2025, 11, 12, 10, 0),
-        endTime: DateTime(2025, 11, 12, 10, 30),
-        subject: "이영희",
-        notes: "내과 | 23세 여성",
-        color: Colors.pink,
-      ),
-      Appointment(
-        startTime: DateTime(2025, 11, 13, 13, 0),
-        endTime: DateTime(2025, 11, 13, 13, 30),
-        subject: "박지민",
-        notes: "내과 | 48세 여성",
-        color: Colors.purple,
-      ),
-      Appointment(
-        startTime: DateTime(2025, 11, 15, 9, 30),
-        endTime: DateTime(2025, 11, 15, 10, 0),
-        subject: "정우성",
-        notes: "내과 | 43세 남성",
-        color: Colors.teal,
-      ),
-      Appointment(
-        startTime: DateTime(2025, 11, 15, 10, 0),
-        endTime: DateTime(2025, 11, 15, 10, 30),
-        subject: "한지민",
-        notes: "내과 | 38세 여성",
-        color: Colors.orange,
-      ),
-    ];
+    // DB에서 받아온 데이터 기준으로 진료 일정 생성
+    _appointments = widget.patients.map((p) {
+      // DB 저장된 날짜를 DateTime으로 변환
+      final DateTime startTime = parseReservationDate(p.reservationDate);
+
+      final int age = DateTime.now().year - p.birthYear;
+
+      return Appointment(
+        startTime: startTime,
+        endTime: startTime.add(Duration(minutes: 30)),
+        subject: p.name ?? "",
+        notes: "${p.createdByUsername ?? '등록자 없음'} | ${age != null ? '$age세' : '나이 모름'}",
+        color: Colors.indigoAccent,
+      );
+    }).toList();
   }
 
   List<Map<String, String>> _getEventsForDay(DateTime date) {
@@ -72,16 +53,20 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
     a.startTime.year == date.year &&
         a.startTime.month == date.month &&
         a.startTime.day == date.day);
-    return events
-        .map((a) => {
+
+    return events.map((a) => {
       "time":
       "${a.startTime.hour.toString().padLeft(2, '0')}:${a.startTime.minute.toString().padLeft(2, '0')} - ${a.endTime.hour.toString().padLeft(2, '0')}:${a.endTime.minute.toString().padLeft(2, '0')}",
       "name": a.subject,
       "dept": a.notes?.split('|').first.trim() ?? "",
-      "age": a.notes?.split('|').last.trim().replaceAll(RegExp(r'[^0-9]'), '') ?? "",
-      "gender": a.notes?.contains("남") ?? false ? "남성" : "여성",
-    })
-        .toList();
+      "age": a.notes
+          ?.split('|')
+          .last
+          .trim()
+          .replaceAll(RegExp(r'[^0-9]'), '') ??
+          "",
+      "gender": (a.notes ?? "").contains("남") ? "남성" : "여성",
+    }).toList();
   }
 
   @override
