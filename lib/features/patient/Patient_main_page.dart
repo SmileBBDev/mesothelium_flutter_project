@@ -66,7 +66,7 @@ class _PatientMainPageState extends State<PatientMainPage> {
 // 환자 메인 홈화면
 class _PatientMainBody extends StatelessWidget{
   final void Function(String route)? onCategorySelected;
-  const _PatientMainBody({super.key, this.onCategorySelected});
+  const _PatientMainBody({this.onCategorySelected});
 
 
   @override

@@ -8,6 +8,8 @@ class SignUpScreen extends StatelessWidget {
   // It's time to validat the text field
   final _formKey = GlobalKey<FormState>();
 
+  SignUpScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // But still same problem, let's fixed it

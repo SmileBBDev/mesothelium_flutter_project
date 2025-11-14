@@ -11,11 +11,11 @@ class SignInForm extends StatefulWidget {
   final TextEditingController pwController;
 
   const SignInForm({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.idController,
     required this.pwController,
-  }) : super(key: key);
+  });
 
   @override
   State<SignInForm> createState() => _SignInFormState();

@@ -8,7 +8,7 @@ import 'ApprovalPage.dart';
 class AdminMainPage extends StatefulWidget{
   static String url = '/adminMain';
   final Function(int)? onTabSelected;
-  const AdminMainPage({this.onTabSelected});
+  const AdminMainPage({super.key, this.onTabSelected});
 
   @override
   _AdminMainPageState createState() => _AdminMainPageState();

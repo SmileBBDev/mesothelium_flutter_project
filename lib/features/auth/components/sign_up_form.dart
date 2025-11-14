@@ -5,9 +5,9 @@ import '../../../constants.dart';
 
 class SignUpForm extends StatelessWidget {
    SignUpForm({
-    Key? key,
+    super.key,
     required this.formKey,
-  }) : super(key: key);
+  });
 
   final GlobalKey formKey;
 
@@ -23,7 +23,7 @@ class SignUpForm extends StatelessWidget {
           TextFieldName(text: "아이디"),
           TextFormField(
             decoration: InputDecoration(hintText: "userId"),
-            validator: RequiredValidator(errorText: "Id를 입력해주세요"),
+            validator: RequiredValidator(errorText: "Id를 입력해주세요").call,
             onSaved: (userId) => _userId = userId!,
           ),
 
@@ -34,7 +34,7 @@ class SignUpForm extends StatelessWidget {
             // We want to hide our password
             obscureText: true,
             decoration: InputDecoration(hintText: "******"),
-            validator: passwordValidator,
+            validator: passwordValidator.call,
             onSaved: (password) => _password = password!,
             // We also need to validate our password
             // Now if we type anything it adds that to our password
@@ -51,7 +51,7 @@ class SignUpForm extends StatelessWidget {
           TextFieldName(text: "이름"),
           TextFormField(
             decoration: InputDecoration(hintText: "홍길동"),
-            validator: RequiredValidator(errorText: "성함을 입력해주세요"),
+            validator: RequiredValidator(errorText: "성함을 입력해주세요").call,
             // Let's save our username
             onSaved: (username) => _userName = username!,
           ),
@@ -63,7 +63,7 @@ class SignUpForm extends StatelessWidget {
           TextFormField(
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(hintText: "mesodr@email.com"),
-            validator: EmailValidator(errorText: "Use a valid email!"),
+            validator: EmailValidator(errorText: "Use a valid email!").call,
             onSaved: (email) => _email = email!,
           ),
           const SizedBox(height: defaultPadding),
@@ -72,7 +72,7 @@ class SignUpForm extends StatelessWidget {
           TextFormField(
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(hintText: "01012341234"),
-            validator: RequiredValidator(errorText: "Phone number is required"),
+            validator: RequiredValidator(errorText: "Phone number is required").call,
             onSaved: (phoneNumber) => _phoneNumber = phoneNumber!,
           ),
         ],
@@ -83,9 +83,9 @@ class SignUpForm extends StatelessWidget {
 
 class TextFieldName extends StatelessWidget {
   const TextFieldName({
-    Key? key,
+    super.key,
     required this.text,
-  }) : super(key: key);
+  });
 
   final String text;
 

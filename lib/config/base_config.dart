@@ -18,7 +18,7 @@ class BaseConfig{
 
   // 실기기에서 테스트 시: 개인 local URL
   // static const String baseUrl = 'http://192.168.41.133:8000';
-  static String baseUrl = 'http://192.168.41.167:8000';
+  static String baseUrl = 'http://192.168.41.126:8000';
 
   final Dio dio = Dio(
     BaseOptions(
@@ -26,6 +26,7 @@ class BaseConfig{
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
       headers: {'Content-Type': 'application/json'},
+      validateStatus: (status) => true,  // ⭐ 모든 응답 허용
     ),
   );
 

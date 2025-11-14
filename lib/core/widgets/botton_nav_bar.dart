@@ -8,11 +8,11 @@ class BottomNavBar extends StatefulWidget {
   final List<MenuCategory> menuList;
 
   const BottomNavBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
     required this.menuList,
-  }) : super(key: key);
+  });
 
   @override
   State<BottomNavBar> createState() => _BottomNavBarState();

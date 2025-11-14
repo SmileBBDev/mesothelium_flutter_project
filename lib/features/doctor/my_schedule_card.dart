@@ -163,6 +163,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: PatientCard(patients: selectedEvents),
+          
         ),
       ],
     );
