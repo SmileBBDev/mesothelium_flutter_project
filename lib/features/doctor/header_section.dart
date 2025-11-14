@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 class DoctorHeaderSection extends StatelessWidget {
-  const DoctorHeaderSection({super.key});
+  final String? username;
+  const DoctorHeaderSection({super.key, this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -13,9 +14,14 @@ class DoctorHeaderSection extends StatelessWidget {
           // 왼쪽 텍스트
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               const Text("안녕하세요", style: TextStyle(fontSize: 16, color: Colors.black54)),
-              const Text("ooo 의사님", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                  (username == null || username!.trim().isEmpty)
+                      ? "의사님"
+                      : "${username!} 의사님",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
+              ),
             ],
           ),
 

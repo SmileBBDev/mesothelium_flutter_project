@@ -13,9 +13,10 @@ import '../patient/page/PredictionResult.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
+  final String username;
   final String role;
 
-  const HomePage({super.key, required this.role});
+  const HomePage({super.key, required this.role, required this.username});
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -42,7 +43,7 @@ class _HomePageState extends State<HomePage> {
         _menuList = patientMenu;
         break;
       case 'doctor':
-        _pages = [DoctorMainPage(), MyInfoPage()];
+        _pages = [DoctorMainPage(username:widget.username), MyInfoPage()];
         _menuList = doctorMenu;
         break;
       case 'admin':
@@ -50,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         _menuList = adminMenu;
         break;
       default:
-        _pages = [PatientMainPage(), DoctorMainPage(), AdminMainPage(), MyInfoPage()];
+        _pages = [PatientMainPage(), DoctorMainPage(username:widget.username), AdminMainPage(), MyInfoPage()];
         _menuList = menu_categories;
 
     }

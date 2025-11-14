@@ -10,6 +10,8 @@ import 'patient_card.dart';
 
 class DoctorMainPage extends StatefulWidget{
   static String url = '/doctorMain';
+  final String? username;
+  const DoctorMainPage({super.key, this.username});
 
   @override
   _DoctorMainPageState createState() => _DoctorMainPageState();
@@ -31,12 +33,12 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
     return SingleChildScrollView(
       child:Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          DoctorHeaderSection(),
-          MyScheduleCard(),
-          SizedBox(height: defaultPadding * 2),
-          AiPredictSummary(),
-          SizedBox(height: defaultPadding * 2),
+        children: [
+          DoctorHeaderSection(username : widget.username),
+          const MyScheduleCard(),
+          const SizedBox(height: defaultPadding * 2),
+          const AiPredictSummary(),
+          const SizedBox(height: defaultPadding * 2),
           //AiPredictSection(),
         ],
       ),

@@ -117,7 +117,7 @@ class _SignInScreenState extends State<SignInScreen>{
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => HomePage(role: context.read<AuthProvider>().user!.role),
+                                  builder: (_) => HomePage(role: context.read<AuthProvider>().user!.role, username : context.read<AuthProvider>().user!.username),
                                 ),
                               );
                             } catch (e) {
