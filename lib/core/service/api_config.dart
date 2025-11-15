@@ -2,12 +2,11 @@ import 'dart:io';
 
 // API 설정 및 상수
 class ApiConfig {
-  // 플랫폼별 자동 URL 선택
-  // Android 에뮬레이터에서는 10.0.2.2 사용 (호스트 머신)
-  // Windows 데스크톱에서는 localhost 사용
+  // GCP 배포 서버 (Nginx 80포트)
+  static const String baseUrl = 'http://34.61.113.204';
+
+  // 로컬 개발 서버 (Django 포트 8000) - 로컬 개발 시 사용
   // static const String baseUrl = 'http://127.0.0.1:8000';
-  // 실제 디바이스나 다른 머신에서 접속 시: 'http://192.168.41.126:8000'
-  static const String baseUrl = 'http://192.168.41.126:8000';
 
 
   // Flutter는 Django API만 호출합니다
@@ -42,6 +41,9 @@ class ApiConfig {
   static const String mlSchemaEndpoint = '/api/ml/schema/';
   static const String mlPredictEndpoint = '/api/ml/predict/';
   static const String mlReloadEndpoint = '/api/ml/reload/';
+
+  // 예측 결과 저장/조회 엔드포인트
+  static const String predictionsEndpoint = '/api/predictions/';
 
   // 타임아웃 설정
   static const Duration timeout = Duration(seconds: 15);

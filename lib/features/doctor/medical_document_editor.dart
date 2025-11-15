@@ -1,7 +1,5 @@
-// 의사용 진료 문서 작성 페이지 (flutter_quill 사용 + Django API 연동)
-import 'dart:convert';
+// 의사용 간단한 진료 문서 작성 페이지
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import '../../core/service/medical_record_service.dart';
 
 class MedicalDocumentEditor extends StatefulWidget {
@@ -23,10 +21,9 @@ class MedicalDocumentEditor extends StatefulWidget {
 }
 
 class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
-  late QuillController _controller;
-  final FocusNode _focusNode = FocusNode();
   final MedicalRecordService _service = MedicalRecordService();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -34,7 +31,6 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
   @override
   void initState() {
     super.initState();
-    _controller = QuillController.basic();
     _loadDocument();
   }
 
@@ -59,31 +55,7 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
       if (result.success && result.record != null) {
         final record = result.record!;
         _titleController.text = record['title'] ?? '';
-
-        // Delta JSON 로드
-        try {
-          final deltaJson = record['content_delta_json'];
-          if (deltaJson != null) {
-            dynamic ops;
-
-            // String 타입이면 파싱, Map 타입이면 그대로 사용
-            if (deltaJson is String) {
-              final parsed = jsonDecode(deltaJson);
-              ops = parsed is Map ? parsed['ops'] : null;
-            } else if (deltaJson is Map) {
-              ops = deltaJson['ops'];
-            }
-
-            if (ops != null) {
-              _controller = QuillController(
-                document: Document.fromJson(ops),
-                selection: const TextSelection.collapsed(offset: 0),
-              );
-            }
-          }
-        } catch (e) {
-          print('Delta 로드 오류: $e');
-        }
+        _contentController.text = record['content_html'] ?? '';
       } else {
         _showSnackBar(result.message ?? '문서 로드 실패', isError: true);
       }
@@ -91,21 +63,19 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
   }
 
   Future<void> _saveDocument() async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    if (content.isEmpty) {
+      _showSnackBar('내용을 입력해주세요', isError: true);
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // Delta를 JSON으로 변환
-      final delta = _controller.document.toDelta().toJson();
-      final deltaMap = {'ops': delta};
-
-      // 제목
-      final title = _titleController.text.trim();
-
-      // HTML 변환 (선택사항)
-      final plainText = _controller.document.toPlainText();
-
       MedicalRecordResult result;
 
       if (widget.recordId == null) {
@@ -115,16 +85,15 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
           title: title.isNotEmpty
               ? title
               : '진료 기록 ${DateTime.now().toString().substring(0, 10)}',
-          contentDeltaJson: deltaMap,
-          contentHtml: plainText,
+          contentDeltaJson: {},  // 빈 Delta JSON (HTML만 사용)
+          contentHtml: content,
         );
       } else {
         // 기존 기록 수정
         result = await _service.updateMedicalRecord(
           recordId: widget.recordId!,
           title: title.isNotEmpty ? title : null,
-          contentDeltaJson: deltaMap,
-          contentHtml: plainText,
+          contentHtml: content,
         );
       }
 
@@ -161,33 +130,10 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
     );
   }
 
-  // 색상 메뉴 아이템 생성 헬퍼
-  PopupMenuItem<Color> _buildColorMenuItem(Color color, String label) {
-    return PopupMenuItem<Color>(
-      value: color,
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: color,
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
   @override
   void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
     _titleController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
@@ -235,209 +181,84 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 제목 입력
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.grey[100],
-            child: TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: '제목을 입력하세요',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 제목 입력
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: '제목',
+                  hintText: '제목을 입력하세요 (선택사항)',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
+                ),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              // 내용 입력
+              const Text(
+                '진료 내용',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _contentController,
+                maxLines: 15,
+                decoration: const InputDecoration(
+                  hintText: '진료 내용을 입력하세요...\n\n예시:\n- 주소: 복부 통증\n- 진단: 급성 위염\n- 처방: 제산제 복용\n- 추가 소견: ...',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                style: const TextStyle(fontSize: 16, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+
+              // 작성 안내
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '작성 팁',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '• 환자의 증상, 진단 결과, 처방 내용을 명확히 기록하세요.\n'
+                      '• 추후 참고를 위해 상세히 작성하는 것이 좋습니다.\n'
+                      '• 저장된 문서는 환자의 진료 이력에 기록됩니다.',
+                      style: TextStyle(fontSize: 13, height: 1.5),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
-          const Divider(height: 1),
-
-          // 툴바
-          Container(
-            color: Colors.grey[100],
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  // 텍스트 스타일
-                  IconButton(
-                    icon: const Icon(Icons.format_bold),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.bold);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_italic),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.italic);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_underline),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.underline);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.strikethrough_s),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.strikeThrough);
-                    },
-                  ),
-                  const VerticalDivider(),
-
-                  // 글꼴 크기
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.text_fields),
-                    tooltip: '글꼴 크기',
-                    onSelected: (value) {
-                      _controller.formatSelection(
-                        Attribute.fromKeyValue(
-                          'size',
-                          value == 'normal' ? null : value,
-                        ),
-                      );
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'small', child: Text('작게')),
-                      const PopupMenuItem(value: 'normal', child: Text('보통')),
-                      const PopupMenuItem(value: 'large', child: Text('크게')),
-                      const PopupMenuItem(value: 'huge', child: Text('매우 크게')),
-                    ],
-                  ),
-
-                  // 텍스트 색상
-                  PopupMenuButton<Color>(
-                    icon: const Icon(Icons.format_color_text),
-                    tooltip: '텍스트 색상',
-                    onSelected: (color) {
-                      final colorValue = color.value;
-                      final hexColor =
-                          '#${colorValue.toRadixString(16).padLeft(8, '0').substring(2)}';
-                      _controller.formatSelection(
-                        Attribute.fromKeyValue('color', hexColor),
-                      );
-                    },
-                    itemBuilder: (context) => [
-                      _buildColorMenuItem(Colors.black, '검정'),
-                      _buildColorMenuItem(Colors.red, '빨강'),
-                      _buildColorMenuItem(Colors.blue, '파랑'),
-                      _buildColorMenuItem(Colors.green, '초록'),
-                      _buildColorMenuItem(Colors.orange, '주황'),
-                      _buildColorMenuItem(Colors.purple, '보라'),
-                    ],
-                  ),
-
-                  // 형광펜 (배경색)
-                  PopupMenuButton<Color>(
-                    icon: const Icon(Icons.highlight),
-                    tooltip: '형광펜',
-                    onSelected: (color) {
-                      if (color == Colors.transparent) {
-                        _controller.formatSelection(
-                          Attribute.fromKeyValue('background', null),
-                        );
-                      } else {
-                        final colorValue = color.value;
-                        final hexColor =
-                            '#${colorValue.toRadixString(16).padLeft(8, '0').substring(2)}';
-                        _controller.formatSelection(
-                          Attribute.fromKeyValue('background', hexColor),
-                        );
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      _buildColorMenuItem(Colors.yellow, '노랑 형광펜'),
-                      _buildColorMenuItem(Colors.greenAccent, '초록 형광펜'),
-                      _buildColorMenuItem(Colors.pinkAccent, '핑크 형광펜'),
-                      _buildColorMenuItem(Colors.orangeAccent, '주황 형광펜'),
-                      _buildColorMenuItem(Colors.transparent, '제거'),
-                    ],
-                  ),
-
-                  const VerticalDivider(),
-
-                  // 헤더
-                  IconButton(
-                    icon: const Icon(Icons.title),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.h1);
-                    },
-                  ),
-
-                  // 리스트
-                  IconButton(
-                    icon: const Icon(Icons.format_list_bulleted),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.ul);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_list_numbered),
-                    onPressed: () {
-                      _controller.formatSelection(Attribute.ol);
-                    },
-                  ),
-
-                  const VerticalDivider(),
-
-                  // 실행취소/다시실행
-                  IconButton(
-                    icon: const Icon(Icons.undo),
-                    onPressed: () {
-                      _controller.undo();
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.redo),
-                    onPressed: () {
-                      _controller.redo();
-                    },
-                  ),
-
-                  // 포맷 제거
-                  IconButton(
-                    icon: const Icon(Icons.format_clear),
-                    tooltip: '서식 지우기',
-                    onPressed: () {
-                      final selection = _controller.selection;
-                      final text = _controller.document.getPlainText(
-                        selection.start,
-                        selection.end - selection.start,
-                      );
-                      _controller.replaceText(
-                        selection.start,
-                        selection.end - selection.start,
-                        text,
-                        null,
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-
-          // 에디터
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(16),
-              child: QuillEditor.basic(
-                controller: _controller,
-                focusNode: _focusNode,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-
-      // 하단 저장 버튼
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

@@ -35,6 +35,16 @@ dependencies:
   vsc_quill_delta_to_html: ^1.0.5
   flutter_widget_from_html: ^0.15.2
 
+  # 캐싱 및 로컬 저장소
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # 알림 기능
+  flutter_local_notifications: ^18.0.1
+  # firebase_core: ^3.8.1
+  # firebase_messaging: ^15.1.5
+  # timezone: ^0.9.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

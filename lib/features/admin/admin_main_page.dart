@@ -101,6 +101,29 @@ class _AdminMainPageState extends State<AdminMainPage> {
                   elevation: 4,
                 ),
               ),
+              SizedBox(height: 16),
+
+              // ML 모델 관리 버튼
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/mlManagement');
+                },
+                icon: Icon(Icons.memory),
+                label: Text('ML 모델 관리'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: Colors.purple.shade700,
+                  foregroundColor: Colors.white,
+                  textStyle: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+              ),
             ],
           ),
         ),

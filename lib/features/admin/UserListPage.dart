@@ -17,14 +17,36 @@ class _UserListPageState extends State<UserListPage> {
   String searchQuery = '';
   String selectedRole = '전체';
 
-  @override
-  Widget build(BuildContext context) {
-    final filteredUsers = allUsers.where((user) {
+  // 페이지네이션 상태
+  int _currentPage = 0;
+  final int _itemsPerPage = 10;
+
+  int get _totalPages => (_filteredUsers.length / _itemsPerPage).ceil().clamp(1, 9999);
+
+  List<Map<String, dynamic>> get _filteredUsers {
+    return allUsers.where((user) {
       final matchesSearch =
-      user['name'].toLowerCase().contains(searchQuery.toLowerCase());
+          user['name'].toLowerCase().contains(searchQuery.toLowerCase());
       final matchesRole = selectedRole == '전체' || user['role'] == selectedRole;
       return matchesSearch && matchesRole;
     }).toList();
+  }
+
+  List<Map<String, dynamic>> get _paginatedUsers {
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage).clamp(0, _filteredUsers.length);
+    if (startIndex >= _filteredUsers.length) return [];
+    return _filteredUsers.sublist(startIndex, endIndex);
+  }
+
+  void _goToPage(int page) {
+    setState(() {
+      _currentPage = page.clamp(0, _totalPages - 1);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return SafeArea(
       child: Container(
@@ -58,7 +80,10 @@ class _UserListPageState extends State<UserListPage> {
                         fillColor: Colors.white,
                       ),
                       onChanged: (value) {
-                        setState(() => searchQuery = value);
+                        setState(() {
+                          searchQuery = value;
+                          _currentPage = 0; // 검색 시 첫 페이지로 리셋
+                        });
                       },
                     ),
                   ),
@@ -77,6 +102,7 @@ class _UserListPageState extends State<UserListPage> {
                         onChanged: (String? newValue) {
                           setState(() {
                             selectedRole = newValue!;
+                            _currentPage = 0; // 필터 변경 시 첫 페이지로 리셋
                           });
                         },
                         items: ['전체', '의사', '환자']
@@ -94,8 +120,37 @@ class _UserListPageState extends State<UserListPage> {
             ),
             SizedBox(height: 16),
 
-            // 👇 스크롤 부분 수정 (HomePage Scroll에 맞게)
-            filteredUsers.isEmpty
+            // 페이지 정보
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '총 ${_filteredUsers.length}명',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${_currentPage + 1} / $_totalPages 페이지',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // 사용자 목록
+            _paginatedUsers.isEmpty
                 ? Padding(
               padding: const EdgeInsets.only(top: 40.0),
               child: Center(child: Text('회원이 없습니다.')),
@@ -103,9 +158,9 @@ class _UserListPageState extends State<UserListPage> {
                 : ListView.builder(
               shrinkWrap: true, // ✅ 스크롤 중첩 방지
               physics: NeverScrollableScrollPhysics(), // ✅ HomePage 스크롤 사용
-              itemCount: filteredUsers.length,
+              itemCount: _paginatedUsers.length,
               itemBuilder: (context, index) {
-                final user = filteredUsers[index];
+                final user = _paginatedUsers[index];
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8),
                   elevation: 2,
@@ -146,10 +201,75 @@ class _UserListPageState extends State<UserListPage> {
                 );
               },
             ),
+
+            // 페이지네이션 컨트롤
+            if (_filteredUsers.length > _itemsPerPage)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0 ? () => _goToPage(_currentPage - 1) : null,
+                      icon: const Icon(Icons.chevron_left),
+                      tooltip: '이전 페이지',
+                    ),
+                    ..._buildPageButtons(),
+                    IconButton(
+                      onPressed: _currentPage < _totalPages - 1 ? () => _goToPage(_currentPage + 1) : null,
+                      icon: const Icon(Icons.chevron_right),
+                      tooltip: '다음 페이지',
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildPageButtons() {
+    List<Widget> buttons = [];
+    int start = (_currentPage - 2).clamp(0, (_totalPages - 5).clamp(0, _totalPages));
+    int end = (start + 5).clamp(0, _totalPages);
+
+    if (start > 0) {
+      start = (end - 5).clamp(0, _totalPages);
+    }
+
+    for (int i = start; i < end; i++) {
+      buttons.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: ElevatedButton(
+            onPressed: () => _goToPage(i),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: i == _currentPage ? Colors.blue : Colors.grey[300],
+              foregroundColor: i == _currentPage ? Colors.white : Colors.black87,
+              minimumSize: const Size(40, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            child: Text('${i + 1}'),
+          ),
+        ),
+      );
+    }
+
+    return buttons;
   }
 
   void _deleteUser(Map<String, dynamic> user) {

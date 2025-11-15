@@ -13,12 +13,12 @@ class BaseConfig{
   factory BaseConfig() => _i;
   BaseConfig._();
 
-  // 실제 장고 백엔드 주소로 변경
-  // static const String baseUrl = 'http://localhost:8000';
+  // GCP 배포 서버 (Nginx 80포트)
+  static String baseUrl = 'http://34.61.113.204';
 
-  // 실기기에서 테스트 시: 개인 local URL
-  // static const String baseUrl = 'http://192.168.41.133:8000';
-  static String baseUrl = 'http://192.168.41.126:8000';
+  // 로컬 개발 서버 - 로컬 개발 시 사용
+  // static String baseUrl = 'http://localhost:8000';
+  // static String baseUrl = 'http://192.168.41.126:8000';
 
   final Dio dio = Dio(
     BaseOptions(
