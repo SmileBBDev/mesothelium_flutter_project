@@ -11,36 +11,27 @@ import 'my_schedule_card.dart';
 class DoctorMainPage extends StatefulWidget{
   static String url = '/doctorMain';
   final AuthUser? user;
-  const DoctorMainPage({super.key, this.user});
+  final List<Patient>? patients;
+  final bool? isLoading;
+  const DoctorMainPage({
+    super.key,
+    this.user,
+    this.patients,
+    this.isLoading
+
+  });
 
   @override
   _DoctorMainPageState createState() => _DoctorMainPageState();
 }
 class _DoctorMainPageState extends State<DoctorMainPage> {
-  List<Patient> myPatients = [];
-  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    init();
+
   }
 
-  Future<void> init() async {
-    try {
-      final patients = await PatientService().getMyPatients(
-        widget.user?.userId,
-      );
-      print("이걸 받았다.");
-      print(patients);
-      setState(() {
-        myPatients = patients;
-        isLoading = false;
-      });
-    } catch (e) {
-      print("환자 조회 오류: $e");
-    }
-  }
 
   @override
   Widget build(BuildContext context){
@@ -49,21 +40,21 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           DoctorHeaderSection(username : widget.user?.username),
-          isLoading
-            ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "진료 일정 로딩 중입니다...",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
-            )
-            : MyScheduleCard(userId: widget.user?.userId, patients: myPatients,),
+          (widget.isLoading ?? false)
+              ? const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  "진료 일정 로딩 중입니다...",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          )
+              : MyScheduleCard(userId: widget.user?.userId, patients: widget.patients ?? []),
 
           const SizedBox(height: defaultPadding * 2),
           const AiPredictSummary(),

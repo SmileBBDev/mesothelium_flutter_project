@@ -4,7 +4,7 @@ class Patient {
   final int birthYear;
   final String phone;
   final String gender;
-  final int reservationDate;
+  final String reservationDate;
   final int createdById;
   final String createdByUsername;
   final String createdAt;
@@ -28,8 +28,8 @@ class Patient {
     return Patient(
       id: json['id'],
       name: json['name'] ?? '',
-      gender: json['gender'] ?? '',
-      reservationDate: json['reservation_date'] ?? 0,
+      gender: json['sex'] ?? '',
+      reservationDate: json['reservation_date'] ?? '',
       birthYear: json['birth_year'] ?? 0,
       phone: json['phone'] ?? '',
       createdById: json['created_by_id'] ?? 0,

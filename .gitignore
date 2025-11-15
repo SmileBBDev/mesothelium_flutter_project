@@ -145,3 +145,9 @@ pubspec.lock
 
 /previews
 .metadata
+
+
+# Flutter auto-generated files
+*/linux/flutter/generated*
+*/macos/Flutter/Generated*
+*/windows/flutter/generated*

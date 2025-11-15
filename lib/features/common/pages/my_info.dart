@@ -3,7 +3,9 @@ import '../../../core/service/auth_service.dart';
 import '../../auth/sign_in_screen.dart';
 
 class MyInfoPage extends StatefulWidget {
-  const MyInfoPage({super.key});
+  final AuthUser? user;
+
+  const MyInfoPage({super.key, this.user});
 
   @override
   State<MyInfoPage> createState() => _MyInfoPageState();
