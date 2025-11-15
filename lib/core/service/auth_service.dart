@@ -61,17 +61,29 @@ class AuthService {
       String username,
       String email,
       String password, {
+        String? name,
+        String? phone,
         String role = 'general',
       }) async {
     try {
+      final data = {
+        'username': username,
+        'email': email,
+        'password': password,
+        'role': role,
+      };
+
+      // name과 phone이 있으면 추가
+      if (name != null && name.isNotEmpty) {
+        data['name'] = name;
+      }
+      if (phone != null && phone.isNotEmpty) {
+        data['phone'] = phone;
+      }
+
       final resp = await _api.dio.post(
         '/api/auth/register/',
-        data: {
-          'username': username,
-          'email': email,
-          'password': password,
-          'role': role,
-        },
+        data: data,
       );
 
       final status = resp.statusCode ?? 200;

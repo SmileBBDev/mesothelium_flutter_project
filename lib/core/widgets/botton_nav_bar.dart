@@ -22,7 +22,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+      padding: EdgeInsets.only(
+        top: 15,
+        left: 8,
+        right: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 15, // 하단 SafeArea 적용
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [

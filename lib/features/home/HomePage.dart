@@ -50,10 +50,22 @@ class _HomePageState extends State<HomePage> {
         _pages = [AdminMainPage(onTabSelected: _onNavItemTapped), ApprovalPage(), UserListPage(), MyInfoPage()];
         _menuList = adminMenu;
         break;
+      case 'staff':
+        // 직원 역할 추가 (관리자와 유사한 권한)
+        _pages = [AdminMainPage(onTabSelected: _onNavItemTapped), ApprovalPage(), UserListPage(), MyInfoPage()];
+        _menuList = adminMenu;
+        break;
       default:
-        _pages = [PatientMainPage(), DoctorMainPage(user:widget.user), AdminMainPage(), MyInfoPage()];
-        _menuList = menu_categories;
-
+        // 일반 사용자(general) 또는 알 수 없는 역할 → 환자 화면으로 처리
+        _pages = [
+          PatientMainPage(onCategorySelected: _onCategorySelected),
+          PharmacyView(),
+          MyAppointments(),
+          PredictionResult(),
+          MyInfoPage()
+        ];
+        _menuList = patientMenu;
+        break;
     }
   }
 

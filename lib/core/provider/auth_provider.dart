@@ -32,9 +32,11 @@ class AuthProvider extends ChangeNotifier {
       String username,
       String email,
       String password, {
+        String? name,
+        String? phone,
         String role = 'general',
       }) async {
-    _user = await _svc.register(username, email, password, role: role);
+    _user = await _svc.register(username, email, password, name: name, phone: phone, role: role);
     notifyListeners();
   }
 

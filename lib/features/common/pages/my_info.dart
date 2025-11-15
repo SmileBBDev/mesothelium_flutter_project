@@ -169,6 +169,37 @@ class _MyInfoPageState extends State<MyInfoPage> {
 
             const SizedBox(height: 24),
 
+            // 프로필 수정 버튼
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/editProfile',
+                    arguments: _userInfo,
+                  ).then((result) {
+                    // 수정 후 돌아왔을 때 정보 새로고침
+                    if (result == true) {
+                      _loadUserInfo();
+                    }
+                  });
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('프로필 수정'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             // 로그아웃 버튼
             SizedBox(
               width: double.infinity,

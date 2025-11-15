@@ -21,6 +21,7 @@ import 'features/staff/patient_management_list.dart';
 import 'features/staff/bulk_register_page.dart';
 import 'features/doctor/ml_prediction_page.dart';
 import 'features/patient/ml_prediction_result_page.dart';
+import 'features/common/pages/edit_profile_page.dart';
 
 
 
@@ -91,6 +92,15 @@ class MyApp extends StatelessWidget {
       },
       onGenerateRoute: (settings) {
         // 동적 라우팅 - 파라미터가 필요한 페이지들
+
+        // 프로필 수정 페이지
+        if (settings.name == '/editProfile') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => EditProfilePage(userInfo: args),
+          );
+        }
+
         if (settings.name == '/medicalDocumentEditor') {
           final args = settings.arguments as Map<String, dynamic>?;
           if (args != null) {
