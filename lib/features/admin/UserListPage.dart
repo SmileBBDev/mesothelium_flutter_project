@@ -457,20 +457,53 @@ class _UserListPageState extends State<UserListPage> {
   }
 
   /// 환자 승인 API 호출
+  /// role은 general로 유지하고, Patient 테이블에만 레코드 생성
   Future<void> _approveAsPatient(int userId, List<int> doctorIds) async {
     try {
+      // ignore: avoid_print
       print('[DEBUG] 환자 승인 시작 - userId: $userId, doctorIds: $doctorIds');
 
-      final response = await _userService.changeRole(
-        userId: userId,
-        role: 'patient',
-        patientPayload: {
-          'assigned_doctor_ids': doctorIds,
-        },
+      // 1. 사용자 상세 정보 조회 시도 (name, phone 포함)
+      final user = allUsers.firstWhere((u) => u['id'] == userId);
+      final username = user['username'] ?? 'Unknown';
+
+      String name = username; // 기본값: username
+      String phone = '';      // 기본값: 빈 문자열
+
+      // UserDetailView API 호출하여 first_name, last_name 가져오기
+      try {
+        final userDetail = await _userService.getUserById(userId);
+        // ignore: avoid_print
+        print('[DEBUG] 사용자 상세 정보: $userDetail');
+
+        // UserProfileSerializer 응답 형식: {user_id, username, email, role, doctor, name, phone}
+        if (userDetail.containsKey('name') && userDetail['name'] != null && userDetail['name'].toString().isNotEmpty) {
+          name = userDetail['name'];
+        }
+        if (userDetail.containsKey('phone') && userDetail['phone'] != null && userDetail['phone'].toString().isNotEmpty) {
+          phone = userDetail['phone'];
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('[WARN] 사용자 상세 정보 조회 실패, 기본값 사용: $e');
+        // 실패해도 username 사용하므로 계속 진행
+      }
+
+      // ignore: avoid_print
+      print('[DEBUG] Patient 생성 정보 - name: $name, phone: $phone');
+
+      // 2. Patient 생성 (role은 general 유지)
+      final response = await _userService.createPatient(
+        name: name,
+        phone: phone,
+        assignedDoctorIds: doctorIds,
       );
 
+      // ignore: avoid_print
       print('[DEBUG] 승인 응답 - success: ${response.success}, statusCode: ${response.statusCode}');
+      // ignore: avoid_print
       print('[DEBUG] 응답 데이터: ${response.data}');
+      // ignore: avoid_print
       print('[DEBUG] 응답 메시지: ${response.message}');
 
       if (!mounted) return;
@@ -478,23 +511,23 @@ class _UserListPageState extends State<UserListPage> {
       if (response.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('환자 승인이 완료되었습니다.'),
+            content: Text('환자 등록이 완료되었습니다.'),
             backgroundColor: Colors.green,
           ),
         );
-        // 목록 새로고침
+        // 목록 새로고침 (role은 여전히 general이므로 표시는 변하지 않지만, Patient 테이블에는 등록됨)
         _loadUsers();
       } else {
         // Django 에러 응답 처리: {"detail": "error message"}
-        String errorMsg = '승인 실패';
+        String errorMsg = '환자 등록 실패';
 
         if (response.data != null && response.data is Map) {
           final detail = response.data['detail'];
           if (detail != null) {
-            errorMsg = '승인 실패: $detail';
+            errorMsg = '등록 실패: $detail';
           }
         } else if (response.message != null) {
-          errorMsg = '승인 실패: ${response.message}';
+          errorMsg = '등록 실패: ${response.message}';
         }
 
         if (response.statusCode != null) {
@@ -510,13 +543,15 @@ class _UserListPageState extends State<UserListPage> {
         );
       }
     } catch (e, stackTrace) {
+      // ignore: avoid_print
       print('[ERROR] 승인 중 예외 발생: $e');
+      // ignore: avoid_print
       print('[ERROR] 스택 트레이스: $stackTrace');
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('승인 중 오류 발생: $e'),
+          content: Text('등록 중 오류 발생: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
         ),

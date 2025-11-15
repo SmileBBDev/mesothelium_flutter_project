@@ -61,35 +61,37 @@ class UserService {
     throw Exception(response.message ?? '의사 목록을 불러올 수 없습니다');
   }
 
-  /// 역할 변경 및 환자 승인
-  /// POST /api/auth/change-role/
-  /// payload 예: { "user_id": 8, "role": "patient", "patient": {"assigned_doctor_ids": [1, 2]} }
-  Future<ApiResponse> changeRole({
-    required int userId,
-    required String role,
-    Map<String, dynamic>? doctorPayload,
-    Map<String, dynamic>? patientPayload,
+  /// 환자 등록 (role은 general 유지, Patient 테이블에만 생성)
+  /// POST /api/patients/
+  /// payload 예: { "name": "홍길동", "phone": "010-1234-5678", "assigned_doctor_ids": [1, 2] }
+  Future<ApiResponse> createPatient({
+    required String name,
+    required String phone,
+    required List<int> assignedDoctorIds,
+    String? sex,
+    int? birthYear,
   }) async {
     final body = <String, dynamic>{
-      'user_id': userId,
-      'role': role,
+      'name': name,
+      'phone': phone,
+      'assigned_doctor_ids': assignedDoctorIds,
     };
 
-    if (doctorPayload != null) {
-      body['doctor'] = doctorPayload;
+    if (sex != null) {
+      body['sex'] = sex;
     }
 
-    if (patientPayload != null) {
-      body['patient'] = patientPayload;
+    if (birthYear != null) {
+      body['birth_year'] = birthYear;
     }
 
     // ignore: avoid_print
-    print('[API] POST /api/auth/change-role/');
+    print('[API] POST /api/patients/');
     // ignore: avoid_print
     print('[API] Request body: $body');
 
     final response = await _apiClient.post(
-      '/api/auth/change-role/',
+      '/api/patients/',
       body: body,
     );
 
@@ -101,5 +103,16 @@ class UserService {
     print('[API] Response data: ${response.data}');
 
     return response;
+  }
+
+  /// 사용자 정보 조회 (User ID로)
+  Future<Map<String, dynamic>> getUserById(int userId) async {
+    final response = await _apiClient.get('/api/auth/users/$userId/');
+
+    if (response.success && response.data != null) {
+      return response.data as Map<String, dynamic>;
+    }
+
+    throw Exception(response.message ?? '사용자 정보를 불러올 수 없습니다');
   }
 }
