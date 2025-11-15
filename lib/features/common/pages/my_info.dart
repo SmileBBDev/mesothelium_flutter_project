@@ -255,7 +255,7 @@ class _MyInfoPageState extends State<MyInfoPage> {
       case 'doctor':
         return '의사';
       case 'staff':
-        return '직원';
+        return '원무과';
       case 'admin':
         return '관리자';
       default:

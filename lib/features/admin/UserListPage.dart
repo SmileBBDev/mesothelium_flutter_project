@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/service/user_service.dart';
 
 class UserListPage extends StatefulWidget {
   const UserListPage({super.key});
@@ -8,11 +9,11 @@ class UserListPage extends StatefulWidget {
 }
 
 class _UserListPageState extends State<UserListPage> {
-  List<Map<String, dynamic>> allUsers = [
-    {'id': 1, 'name': '김의사', 'role': '의사', 'email': 'doctor1@test.com', 'active': true},
-    {'id': 2, 'name': '이환자', 'role': '환자', 'email': 'patient2@test.com', 'active': true},
-    {'id': 3, 'name': '박의사', 'role': '의사', 'email': 'doctor3@test.com', 'active': false},
-  ];
+  final UserService _userService = UserService();
+
+  List<Map<String, dynamic>> allUsers = [];
+  List<Map<String, dynamic>> allDoctors = [];
+  bool _isLoading = false;
 
   String searchQuery = '';
   String selectedRole = '전체';
@@ -21,13 +22,100 @@ class _UserListPageState extends State<UserListPage> {
   int _currentPage = 0;
   final int _itemsPerPage = 10;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+    _loadDoctors();
+  }
+
   int get _totalPages => (_filteredUsers.length / _itemsPerPage).ceil().clamp(1, 9999);
+
+  /// 사용자 목록 로드
+  Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
+    try {
+      final users = await _userService.getUserList();
+      setState(() {
+        allUsers = users;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('사용자 목록 로드 실패: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// 의사 목록 로드
+  Future<void> _loadDoctors() async {
+    try {
+      // ignore: avoid_print
+      print('[DEBUG] 의사 목록 로딩 시작...');
+      final doctors = await _userService.getDoctorList();
+      // ignore: avoid_print
+      print('[DEBUG] 의사 목록 로딩 완료: ${doctors.length}명');
+      // ignore: avoid_print
+      print('[DEBUG] 의사 데이터 구조: ${doctors.isNotEmpty ? doctors.first : "없음"}');
+      setState(() {
+        allDoctors = doctors;
+      });
+    } catch (e) {
+      // ignore: avoid_print
+      print('[ERROR] 의사 목록 로딩 실패: $e');
+      // 의사 목록은 선택사항이므로 에러 무시
+    }
+  }
+
+  /// 역할 변환 함수 (API role → 한국어)
+  String _getRoleText(String? role) {
+    switch (role) {
+      case 'general':
+        return '일반';
+      case 'patient':
+        return '환자';
+      case 'doctor':
+        return '의사';
+      case 'staff':
+        return '원무과';
+      case 'admin':
+        return '관리자';
+      default:
+        return role ?? '일반';
+    }
+  }
+
+  /// 역할 변환 함수 (한국어 → API role)
+  String? _getRoleValue(String roleText) {
+    switch (roleText) {
+      case '일반':
+        return 'general';
+      case '환자':
+        return 'patient';
+      case '의사':
+        return 'doctor';
+      case '원무과':
+        return 'staff';
+      case '관리자':
+        return 'admin';
+      default:
+        return null;
+    }
+  }
 
   List<Map<String, dynamic>> get _filteredUsers {
     return allUsers.where((user) {
+      final username = user['username'] ?? '';
+      final email = user['email'] ?? '';
       final matchesSearch =
-          user['name'].toLowerCase().contains(searchQuery.toLowerCase());
-      final matchesRole = selectedRole == '전체' || user['role'] == selectedRole;
+          username.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          email.toLowerCase().contains(searchQuery.toLowerCase());
+
+      final userRole = _getRoleText(user['role']);
+      final matchesRole = selectedRole == '전체' || userRole == selectedRole;
       return matchesSearch && matchesRole;
     }).toList();
   }
@@ -47,9 +135,8 @@ class _UserListPageState extends State<UserListPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return SafeArea(
-      child: Container(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +192,7 @@ class _UserListPageState extends State<UserListPage> {
                             _currentPage = 0; // 필터 변경 시 첫 페이지로 리셋
                           });
                         },
-                        items: ['전체', '의사', '환자']
+                        items: ['전체', '일반', '환자', '의사', '원무과', '관리자']
                             .map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
@@ -149,70 +236,69 @@ class _UserListPageState extends State<UserListPage> {
             ),
             SizedBox(height: 16),
 
-            // 사용자 목록
-            _paginatedUsers.isEmpty
-                ? Padding(
-              padding: const EdgeInsets.only(top: 40.0),
-              child: Center(child: Text('회원이 없습니다.')),
-            )
-                : ListView.builder(
-              shrinkWrap: true, // ✅ 스크롤 중첩 방지
-              physics: NeverScrollableScrollPhysics(), // ✅ HomePage 스크롤 사용
-              itemCount: _paginatedUsers.length,
-              itemBuilder: (context, index) {
-                final user = _paginatedUsers[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    title: Text("${user['name']} (${user['role']})"),
-                    subtitle: Text(user['email']),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            user['active']
-                                ? Icons.check_circle
-                                : Icons.pause_circle_filled,
-                            color: user['active']
-                                ? Colors.green
-                                : Colors.grey,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              user['active'] = !user['active'];
-                            });
-                          },
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _deleteUser(user);
-                          },
-                        ),
-                      ],
-                    ),
-                    onTap: () => _showUserDetail(context, user),
-                  ),
-                );
-              },
-            ),
+            // 사용자 목록 (ListView.builder를 Column children으로 변경)
+            _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.only(top: 40.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : _paginatedUsers.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 40.0),
+                        child: Center(child: Text('회원이 없습니다.')),
+                      )
+                    : Column(
+                        children: _paginatedUsers.map((user) {
+                          final roleText = _getRoleText(user['role']);
+                          final username = user['username'] ?? '';
+                          final email = user['email'] ?? '';
+                          final isGeneral = user['role'] == 'general';
+
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              title: Text("$username ($roleText)"),
+                              subtitle: Text(email),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // 일반 회원인 경우 환자 승인 버튼 표시
+                                  if (isGeneral)
+                                    IconButton(
+                                      icon: Icon(Icons.person_add, color: Colors.blue),
+                                      tooltip: '환자 승인',
+                                      onPressed: () {
+                                        _showApprovalDialog(context, user);
+                                      },
+                                    ),
+                                  IconButton(
+                                    icon: Icon(Icons.info_outline, color: Colors.grey),
+                                    tooltip: '상세 정보',
+                                    onPressed: () => _showUserDetail(context, user),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => _showUserDetail(context, user),
+                            ),
+                          );
+                        }).toList(),
+                      ),
 
             // 페이지네이션 컨트롤
             if (_filteredUsers.length > _itemsPerPage)
               Container(
-                margin: const EdgeInsets.only(top: 16),
+                margin: const EdgeInsets.only(top: 16, bottom: 16),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, 2),
@@ -272,28 +358,192 @@ class _UserListPageState extends State<UserListPage> {
     return buttons;
   }
 
-  void _deleteUser(Map<String, dynamic> user) {
-    setState(() {
-      allUsers.remove(user);
-    });
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text("${user['name']} 님이 삭제되었습니다.")));
+  /// 환자 승인 다이얼로그 (담당 의사 선택)
+  void _showApprovalDialog(BuildContext context, Map<String, dynamic> user) {
+    final List<int> selectedDoctorIds = [];
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // 처리 중에는 다이얼로그 밖 클릭 방지
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text("${user['username']} 님을 환자로 승인"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("담당 의사를 선택해주세요 (필수):"),
+                  SizedBox(height: 12),
+                  if (allDoctors.isEmpty)
+                    Text("등록된 의사가 없습니다.", style: TextStyle(color: Colors.red))
+                  else
+                    ...allDoctors.map((doctor) {
+                      final doctorId = doctor['id'] as int;
+
+                      // user 필드에서 username 안전하게 추출
+                      String doctorName = '알 수 없음';
+                      if (doctor['user'] != null) {
+                        if (doctor['user'] is Map) {
+                          doctorName = doctor['user']['username'] ?? '알 수 없음';
+                        }
+                      }
+
+                      final licenseNumber = doctor['license_number']?.toString() ?? '';
+                      final isSelected = selectedDoctorIds.contains(doctorId);
+
+                      return CheckboxListTile(
+                        title: Text(doctorName),
+                        subtitle: Text("면허번호: $licenseNumber"),
+                        value: isSelected,
+                        enabled: !isProcessing,
+                        onChanged: (bool? checked) {
+                          setDialogState(() {
+                            if (checked == true) {
+                              selectedDoctorIds.add(doctorId);
+                            } else {
+                              selectedDoctorIds.remove(doctorId);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                  if (isProcessing)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 12),
+                          Text("승인 처리 중...", style: TextStyle(color: Colors.blue)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isProcessing ? null : () => Navigator.pop(dialogContext),
+                child: Text('취소'),
+              ),
+              ElevatedButton(
+                onPressed: (selectedDoctorIds.isEmpty || isProcessing)
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          isProcessing = true;
+                        });
+
+                        await _approveAsPatient(user['id'], selectedDoctorIds);
+
+                        if (dialogContext.mounted) {
+                          Navigator.pop(dialogContext);
+                        }
+                      },
+                child: Text(isProcessing ? '처리 중...' : '승인'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// 환자 승인 API 호출
+  Future<void> _approveAsPatient(int userId, List<int> doctorIds) async {
+    try {
+      print('[DEBUG] 환자 승인 시작 - userId: $userId, doctorIds: $doctorIds');
+
+      final response = await _userService.changeRole(
+        userId: userId,
+        role: 'patient',
+        patientPayload: {
+          'assigned_doctor_ids': doctorIds,
+        },
+      );
+
+      print('[DEBUG] 승인 응답 - success: ${response.success}, statusCode: ${response.statusCode}');
+      print('[DEBUG] 응답 데이터: ${response.data}');
+      print('[DEBUG] 응답 메시지: ${response.message}');
+
+      if (!mounted) return;
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('환자 승인이 완료되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // 목록 새로고침
+        _loadUsers();
+      } else {
+        // Django 에러 응답 처리: {"detail": "error message"}
+        String errorMsg = '승인 실패';
+
+        if (response.data != null && response.data is Map) {
+          final detail = response.data['detail'];
+          if (detail != null) {
+            errorMsg = '승인 실패: $detail';
+          }
+        } else if (response.message != null) {
+          errorMsg = '승인 실패: ${response.message}';
+        }
+
+        if (response.statusCode != null) {
+          errorMsg += ' (상태코드: ${response.statusCode})';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('[ERROR] 승인 중 예외 발생: $e');
+      print('[ERROR] 스택 트레이스: $stackTrace');
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('승인 중 오류 발생: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   void _showUserDetail(BuildContext context, Map<String, dynamic> user) {
+    final roleText = _getRoleText(user['role']);
+    final username = user['username'] ?? '';
+    final email = user['email'] ?? '';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("${user['name']} 상세 정보"),
+        title: Text("$username 상세 정보"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("이메일: ${user['email']}"),
-            Text("역할: ${user['role']}"),
-            Text("상태: ${user['active'] ? '활성' : '비활성'}"),
-            SizedBox(height: 12),
-            Text("가입일: 2025-11-01"),
+            Text("사용자명: $username"),
+            SizedBox(height: 8),
+            Text("이메일: $email"),
+            SizedBox(height: 8),
+            Text("역할: $roleText"),
+            SizedBox(height: 8),
+            Text("ID: ${user['id']}"),
           ],
         ),
         actions: [

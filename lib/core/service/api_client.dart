@@ -215,9 +215,15 @@ class ApiClient {
       );
     }
 
+    // Django 에러 응답 처리: {"detail": "error message"}
+    String? errorMessage = appError.message;
+    if (data is Map<String, dynamic> && data.containsKey('detail')) {
+      errorMessage = data['detail'].toString();
+    }
+
     return ApiResponse(
       success: false,
-      message: appError.message,
+      message: errorMessage,
       statusCode: status,
       data: data,
       errorType: appError.type,
