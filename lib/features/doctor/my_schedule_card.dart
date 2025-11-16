@@ -42,7 +42,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         startTime: startTime,
         endTime: startTime.add(Duration(minutes: 30)),
         subject: p.name ?? "",
-        notes: "${p.createdByUsername ?? '등록자 없음'} | ${age != null ? '$age세' : '나이 모름'}",
+        notes: "${p.createdByUsername ?? '등록자 없음'} | ${age != null ? '$age세' : '나이 모름'} | ${p.gender ?? '성별 미기입'} ",
         color: Colors.indigoAccent,
       );
     }).toList();
@@ -65,7 +65,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
           .trim()
           .replaceAll(RegExp(r'[^0-9]'), '') ??
           "",
-      "gender": (a.notes ?? "").contains("남") ? "남성" : "여성",
+      "gender": (a.notes ?? "").contains("M") ? "남성" : "여성",
     }).toList();
   }
 
@@ -163,7 +163,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: PatientCard(patients: selectedEvents),
-          
+
         ),
       ],
     );

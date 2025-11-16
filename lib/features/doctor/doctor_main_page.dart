@@ -13,37 +13,28 @@ import 'doctor_patients_list.dart';
 class DoctorMainPage extends StatefulWidget{
   static String url = '/doctorMain';
   final AuthUser? user;
-  const DoctorMainPage({super.key, this.user});
+  final List<Patient>? patients;
+  final bool? isLoading;
+  const DoctorMainPage({
+    super.key,
+    this.user,
+    this.patients,
+    this.isLoading
+
+  });
 
   @override
   _DoctorMainPageState createState() => _DoctorMainPageState();
 }
 
 class _DoctorMainPageState extends State<DoctorMainPage> {
-  List<Patient> myPatients = [];
-  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    init();
+
   }
 
-  Future<void> init() async {
-    try {
-      final patients = await PatientService().getMyPatients(
-        widget.user?.userId,
-      );
-      print("이걸 받았다.");
-      print(patients);
-      setState(() {
-        myPatients = patients;
-        isLoading = false;
-      });
-    } catch (e) {
-      print("환자 조회 오류: $e");
-    }
-  }
 
   @override
   Widget build(BuildContext context){
@@ -67,7 +58,7 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  isLoading
+                  (widget.isLoading ?? false)
                     ? const Center(
                       child: Padding(
                         padding: EdgeInsets.all(32.0),
@@ -84,7 +75,7 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
                         ),
                       ),
                     )
-                    : MyScheduleCard(userId: widget.user?.userId, patients: myPatients),
+                    : MyScheduleCard(userId: widget.user?.userId, patients: widget.patients ?? []),
                 ],
               ),
             ),
