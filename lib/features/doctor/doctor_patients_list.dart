@@ -152,9 +152,9 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.calendar_today, color: Colors.blue),
-                    onPressed: () => _showScheduleDialog(patient),
-                    tooltip: '진료 일정 등록',
+                    icon: const Icon(Icons.edit_note, color: Colors.blue),
+                    onPressed: () => _showPrescriptionDialog(patient),
+                    tooltip: '진료 기록 작성',
                   ),
                   IconButton(
                     icon: const Icon(Icons.analytics, color: Colors.green),
@@ -170,138 +170,88 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
     );
   }
 
-  void _showScheduleDialog(Map<String, dynamic> patient) {
-    final nameController = TextEditingController(text: patient['name']?.toString() ?? '');
-    DateTime selectedDate = DateTime.now();
-    TimeOfDay selectedTime = TimeOfDay.now();
+  void _showPrescriptionDialog(Map<String, dynamic> patient) {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('진료 일정 등록'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: '환자 이름',
-                        border: OutlineInputBorder(),
-                      ),
-                      enabled: false,
-                    ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      leading: const Icon(Icons.calendar_today),
-                      title: const Text('날짜'),
-                      subtitle: Text('${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}'),
-                      onTap: () async {
-                        final pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (pickedDate != null) {
-                          setDialogState(() {
-                            selectedDate = pickedDate;
-                          });
-                        }
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.access_time),
-                      title: const Text('시간'),
-                      subtitle: Text('${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}'),
-                      onTap: () async {
-                        final pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: selectedTime,
-                        );
-                        if (pickedTime != null) {
-                          setDialogState(() {
-                            selectedTime = pickedTime;
-                          });
-                        }
-                      },
-                    ),
-                  ],
+        return AlertDialog(
+          title: Text('${patient['name']} - 진료 기록 작성'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: '제목',
+                    hintText: '예: 정기 검진, 진료 소견 등',
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('취소'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(dialogContext);
-                    await _createSchedule(patient, selectedDate, selectedTime);
-                  },
-                  child: const Text('등록'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: contentController,
+                  decoration: const InputDecoration(
+                    labelText: '진료 내용',
+                    hintText: '증상, 진단, 처방 등을 입력하세요',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 5,
                 ),
               ],
-            );
-          },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('제목을 입력하세요')),
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext);
+                await _createPrescription(
+                  patient,
+                  titleController.text,
+                  contentController.text,
+                );
+              },
+              child: const Text('저장'),
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<void> _createSchedule(Map<String, dynamic> patient, DateTime date, TimeOfDay time) async {
+  Future<void> _createPrescription(
+    Map<String, dynamic> patient,
+    String title,
+    String content,
+  ) async {
     try {
-      // 날짜와 시간을 결합하여 문자열로 변환
-      final reservationDateTime = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
+      // TODO: Prescription API 호출 구현 필요
+      // 현재는 임시 메시지만 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${patient['name']}님의 진료 기록이 저장되었습니다\n(API 구현 예정)'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
       );
-
-      // ISO 8601 형식으로 변환: "2025-11-16T14:30:00"
-      final reservationDateStr = reservationDateTime.toIso8601String();
-
-      print('[진료일정] 환자 ID: ${patient['id']}, 예약일시: $reservationDateStr');
-
-      // 환자 정보 업데이트 - reservation_date 설정
-      final result = await PatientService().updatePatient(
-        patientId: patient['id'] as int,
-        reservationDate: reservationDateStr,
-      );
-
-      if (!mounted) return;
-
-      if (result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${patient['name']}님의 진료 일정이 등록되었습니다'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // 로컬 환자 목록 새로고침
-        await _loadPatients();
-        // HomePage의 환자 목록도 새로고침 (진료 일정 탭 업데이트용)
-        if (widget.onPatientsChanged != null) {
-          await widget.onPatientsChanged!();
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('일정 등록 실패: ${result.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('일정 등록 중 오류: $e'),
+          content: Text('진료 기록 저장 실패: $e'),
           backgroundColor: Colors.red,
         ),
       );

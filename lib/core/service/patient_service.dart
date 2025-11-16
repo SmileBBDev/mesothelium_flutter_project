@@ -70,6 +70,10 @@ class PatientService {
         body: body,
       );
 
+      // DEBUG: API 응답 로그
+      print('[환자 정보 업데이트 응답] success: ${response.success}, message: ${response.message}');
+      print('[환자 정보 업데이트 응답 데이터] ${response.data}');
+
       if (response.success && response.data != null) {
         return PatientResult(
           success: true,
