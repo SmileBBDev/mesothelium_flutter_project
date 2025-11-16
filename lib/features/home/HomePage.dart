@@ -14,11 +14,7 @@ import '../patient/Patient_main_page.dart';
 import '../patient/page/MyAppointments.dart';
 import '../patient/page/PharmacyView.dart';
 import '../patient/page/PredictionResult.dart';
-<<<<<<< HEAD
 import '../staff/staff_main_page.dart';
-=======
-import '../staff/EnrollPatientPage.dart';
->>>>>>> origin/main
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
@@ -38,44 +34,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
-    // 역할에 따른 footbar 구분
-    switch (widget.user.role) {
-      case 'patient':
-        _pages = [
-          PatientMainPage(onCategorySelected: _onCategorySelected),
-          PharmacyView(),
-          MyAppointments(),
-          PredictionResult(),
-          MyInfoPage()
-        ];
-        _menuList = patientMenu;
-        break;
-      case 'doctor':
-        _pages = [DoctorMainPage(user:widget.user), MyInfoPage()];
-        _menuList = doctorMenu;
-        break;
-      case 'admin':
-        _pages = [AdminMainPage(onTabSelected: _onNavItemTapped), ApprovalPage(), UserListPage(), MyInfoPage()];
-        _menuList = adminMenu;
-        break;
-      case 'staff':
-        // 원무과 역할: 승인 관리, 환자 관리, 대량 등록
-        _pages = [StaffMainPage(), MyInfoPage()];
-        _menuList = staffMenu;
-        break;
-      default:
-        // 일반 사용자(general) 또는 알 수 없는 역할 → 환자 화면으로 처리
-        _pages = [
-          PatientMainPage(onCategorySelected: _onCategorySelected),
-          PharmacyView(),
-          MyAppointments(),
-          PredictionResult(),
-          MyInfoPage()
-        ];
-        _menuList = patientMenu;
-        break;
-=======
     _loadPatients();
   }
 
@@ -96,7 +54,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         isLoading = false;
       });
->>>>>>> origin/main
     }
   }
 
@@ -124,7 +81,7 @@ class _HomePageState extends State<HomePage> {
       switch (widget.user.role) {
         case 'staff' :
           return [
-            EnrollPatientPage(),
+            StaffMainPage(),
             MyInfoPage(user: widget.user,) ];
         case 'general':
         case 'patient':
@@ -171,7 +128,7 @@ class _HomePageState extends State<HomePage> {
     final List<MenuCategory> menuList = () {
       switch (widget.user.role) {
         case 'staff':
-          return staffManu;
+          return staffMenu;
         case 'general':
         case 'patient':
           return patientMenu;

@@ -230,12 +230,12 @@ class PermissionRoute extends StatelessWidget {
 
         // 권한이 없으면 unauthorizedPage 또는 unauthorizedRoute로 이동
         if (unauthorizedPage != null) {
-          return unauthorizedPage;
+          return unauthorizedPage!;
         }
 
         if (unauthorizedRoute != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, unauthorizedRoute);
+            Navigator.pushReplacementNamed(context, unauthorizedRoute!);
           });
         } else {
           WidgetsBinding.instance.addPostFrameCallback((_) {

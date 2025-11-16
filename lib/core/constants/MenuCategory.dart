@@ -35,21 +35,11 @@ const List<MenuCategory> doctorMenu = [
 const List<MenuCategory> adminMenu = [
   MenuCategory(icon: "assets/icons/home.svg", title: "관리", url: "/adminMain"),
   MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "회원 승인", url: "/approval"),
-<<<<<<< HEAD
-  MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "전체 회원관리", url: "/allUser"),
-  MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "내 정보", url: "/myInfo"),
+  MenuCategory(icon: "assets/icons/Menu.svg", title: "전체 회원관리", url: "/allUser"),
+  MenuCategory(icon: "assets/icons/notifications.svg", title: "내 정보", url: "/myInfo"),
 ];
 
 const List<MenuCategory> staffMenu = [
   MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "원무과", url: "/staffMain"),
   MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "내 정보", url: "/myInfo"),
-=======
-  MenuCategory(icon: "assets/icons/Menu.svg", title: "전체 회원관리", url: "/allUser"),
-  MenuCategory(icon: "assets/icons/notifications.svg", title: "내 정보", url: "/myInfo"),
-];
-
-const List<MenuCategory> staffManu = [
-  MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "환자 등록", url: "/enrollPatient"),
-  MenuCategory(icon: "assets/icons/notifications.svg", title: "내 정보", url: "/myInfo"),
->>>>>>> origin/main
 ];
