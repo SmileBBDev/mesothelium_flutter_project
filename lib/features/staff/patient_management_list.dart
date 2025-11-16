@@ -59,12 +59,27 @@ class _PatientManagementListState extends State<PatientManagementList> {
         if (patientsResult.success && patientsResult.patients != null) {
           _allPatients = patientsResult.patients!;
           _filteredPatients = _allPatients;
+
+          // DEBUG: 환자 데이터 확인
+          print('[환자목록] 총 환자 수: ${_allPatients.length}');
+          if (_allPatients.isNotEmpty) {
+            print('[환자목록] 첫 번째 환자 데이터: ${_allPatients.first}');
+            // assigned_doctors 필드 상세 확인
+            if (_allPatients.first.containsKey('assigned_doctors')) {
+              print('[환자목록] assigned_doctors 타입: ${_allPatients.first['assigned_doctors'].runtimeType}');
+              print('[환자목록] assigned_doctors 값: ${_allPatients.first['assigned_doctors']}');
+            }
+            if (_allPatients.first.containsKey('assigned_doctors_info')) {
+              print('[환자목록] assigned_doctors_info: ${_allPatients.first['assigned_doctors_info']}');
+            }
+          }
         } else {
           _errorMessage = patientsResult.message ?? '환자 목록을 불러올 수 없습니다.';
         }
 
         if (doctorsResult.success && doctorsResult.doctors != null) {
           _doctors = doctorsResult.doctors!;
+          print('[환자목록] 총 의사 수: ${_doctors.length}');
         }
       });
     }
@@ -404,11 +419,18 @@ class _PatientManagementListState extends State<PatientManagementList> {
     final patientName = patient['name']?.toString() ?? '환자';
 
     // 현재 담당 의사 ID 목록
-    final assignedDoctors = patient['assigned_doctors'] as List?;
+    // API 응답에서는 'assigned_doctors_info'로 담당의사 정보가 옴
+    final assignedDoctors = patient['assigned_doctors_info'] as List? ?? patient['assigned_doctors'] as List?;
     final currentDoctorIds = assignedDoctors?.map((d) {
       if (d is Map) return d['id'] as int?;
       return null;
     }).whereType<int>().toSet() ?? <int>{};
+
+    // DEBUG: 데이터 구조 확인
+    print('[담당의사변경] 환자 ID: $patientId, 이름: $patientName');
+    print('[담당의사변경] assigned_doctors 원본: $assignedDoctors');
+    print('[담당의사변경] currentDoctorIds: $currentDoctorIds');
+    print('[담당의사변경] 전체 의사 수: ${_doctors.length}');
 
     // 현재 담당의사와 그 외 의사를 분리
     final currentDoctors = <Map<String, dynamic>>[];
@@ -421,6 +443,13 @@ class _PatientManagementListState extends State<PatientManagementList> {
       } else {
         otherDoctors.add(doctor);
       }
+    }
+
+    // DEBUG: 분류 결과 확인
+    print('[담당의사변경] 현재 담당의사 수: ${currentDoctors.length}');
+    print('[담당의사변경] 다른 의사 수: ${otherDoctors.length}');
+    if (currentDoctors.isNotEmpty) {
+      print('[담당의사변경] 현재 담당의사 목록: ${currentDoctors.map((d) => d['id']).toList()}');
     }
 
     showDialog(

@@ -1,6 +1,8 @@
 // 원무과: 일반 사용자 승인 페이지 (역할별 승인 처리)
 import 'package:flutter/material.dart';
 import '../../core/service/user_management_service.dart';
+import '../../core/service/user_service.dart';
+import '../../core/service/doctor_service.dart';
 
 class UserApprovalList extends StatefulWidget {
   const UserApprovalList({super.key});
@@ -56,11 +58,12 @@ class _UserApprovalListState extends State<UserApprovalList> {
     }
   }
 
-  // staff를 제외한 필터링된 사용자 목록
+  // 일반 사용자만 필터링 (의사, 관리자, 원무과 제외)
   List<Map<String, dynamic>> get _filteredUsers {
     return _allUsers.where((user) {
       final userRole = user['role']?.toString() ?? 'general';
-      return userRole != 'staff'; // staff는 관리자만 승인 가능하므로 제외
+      // general만 표시 (doctor, admin, staff 제외)
+      return userRole == 'general';
     }).toList();
   }
 
@@ -238,19 +241,35 @@ class _UserApprovalListState extends State<UserApprovalList> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // general은 승인 없이 삭제만 가능
+                      // general은 환자로 승인 가능
                       userRole == 'general'
-                        ? SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => _rejectUser(user['id'] as int),
-                              icon: const Icon(Icons.delete),
-                              label: const Text('삭제'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _approveAsPatient(user),
+                                  icon: const Icon(Icons.person_add),
+                                  label: const Text('환자로 승인'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _rejectUser(user['id'] as int),
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text('삭제'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
                           )
                         : Row(
                             children: [
@@ -401,6 +420,169 @@ class _UserApprovalListState extends State<UserApprovalList> {
 
     if (result.success) {
       await _loadData();
+    }
+  }
+
+  Future<void> _approveAsPatient(Map<String, dynamic> user) async {
+    final userId = user['id'] as int;
+    final userName = user['name']?.toString() ?? user['username']?.toString() ?? '사용자';
+
+    // 의사 목록 로드
+    final doctorService = DoctorService();
+    final doctorsResult = await doctorService.getDoctors();
+
+    if (!doctorsResult.success || doctorsResult.doctors == null || doctorsResult.doctors!.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('의사 목록을 불러올 수 없습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final doctors = doctorsResult.doctors!;
+
+    // 의사 선택 다이얼로그 표시
+    if (!mounted) return;
+
+    final selectedDoctorIds = <int>[];
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('$userName을(를) 환자로 승인'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '담당 의사를 선택하세요 (복수 선택 가능)',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: doctors.length,
+                        itemBuilder: (context, index) {
+                          final doctor = doctors[index];
+                          final doctorId = doctor['id'] as int;
+                          final doctorName = doctor['user']?['username'] ?? '알 수 없음';
+                          final department = doctor['department']?.toString() ?? '';
+                          final isSelected = selectedDoctorIds.contains(doctorId);
+
+                          return CheckboxListTile(
+                            title: Text(doctorName),
+                            subtitle: Text(department.isNotEmpty ? '진료과: $department' : ''),
+                            value: isSelected,
+                            onChanged: (bool? checked) {
+                              setDialogState(() {
+                                if (checked == true) {
+                                  selectedDoctorIds.add(doctorId);
+                                } else {
+                                  selectedDoctorIds.remove(doctorId);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    if (selectedDoctorIds.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          '${selectedDoctorIds.length}명의 의사가 선택됨',
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('취소'),
+                ),
+                ElevatedButton(
+                  onPressed: selectedDoctorIds.isEmpty
+                      ? null
+                      : () async {
+                          Navigator.pop(dialogContext);
+                          await _performPatientApproval(userId, userName, selectedDoctorIds);
+                        },
+                  child: const Text('승인'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _performPatientApproval(int userId, String userName, List<int> doctorIds) async {
+    try {
+      final userService = UserService();
+
+      // 사용자 상세 정보 조회
+      String name = userName;
+      String phone = '';
+
+      try {
+        final userDetail = await userService.getUserById(userId);
+        if (userDetail.containsKey('name') && userDetail['name'] != null) {
+          name = userDetail['name'];
+        }
+        if (userDetail.containsKey('phone') && userDetail['phone'] != null) {
+          phone = userDetail['phone'];
+        }
+      } catch (e) {
+        // 실패해도 username 사용
+      }
+
+      // Patient 생성
+      final response = await userService.createPatient(
+        name: name,
+        phone: phone,
+        assignedDoctorIds: doctorIds,
+      );
+
+      if (!mounted) return;
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$userName님이 환자로 등록되었습니다'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('환자 등록 실패: ${response.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('등록 중 오류 발생: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

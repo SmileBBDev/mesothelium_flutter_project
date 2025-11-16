@@ -37,3 +37,8 @@ const List<MenuCategory> adminMenu = [
   MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "전체 회원관리", url: "/allUser"),
   MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "내 정보", url: "/myInfo"),
 ];
+
+const List<MenuCategory> staffMenu = [
+  MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "원무과", url: "/staffMain"),
+  MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "내 정보", url: "/myInfo"),
+];

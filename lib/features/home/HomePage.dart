@@ -11,6 +11,7 @@ import '../patient/Patient_main_page.dart';
 import '../patient/page/MyAppointments.dart';
 import '../patient/page/PharmacyView.dart';
 import '../patient/page/PredictionResult.dart';
+import '../staff/staff_main_page.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
@@ -51,9 +52,9 @@ class _HomePageState extends State<HomePage> {
         _menuList = adminMenu;
         break;
       case 'staff':
-        // 직원 역할 추가 (관리자와 유사한 권한)
-        _pages = [AdminMainPage(onTabSelected: _onNavItemTapped), ApprovalPage(), UserListPage(), MyInfoPage()];
-        _menuList = adminMenu;
+        // 원무과 역할: 승인 관리, 환자 관리, 대량 등록
+        _pages = [StaffMainPage(), MyInfoPage()];
+        _menuList = staffMenu;
         break;
       default:
         // 일반 사용자(general) 또는 알 수 없는 역할 → 환자 화면으로 처리

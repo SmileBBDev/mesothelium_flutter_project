@@ -48,6 +48,7 @@ class PatientService {
     int? birthYear,
     String? phone,
     List<int>? assignedDoctors,
+    String? reservationDate,
     String? address,
     String? notes,
   }) async {
@@ -56,9 +57,13 @@ class PatientService {
       if (name != null) body['name'] = name;
       if (birthYear != null) body['birth_year'] = birthYear;
       if (phone != null) body['phone'] = phone;
-      if (assignedDoctors != null) body['assigned_doctors'] = assignedDoctors;
+      if (assignedDoctors != null) body['assigned_doctor_ids'] = assignedDoctors; // Django는 assigned_doctor_ids 기대
+      if (reservationDate != null) body['reservation_date'] = reservationDate;
       if (address != null) body['address'] = address;
       if (notes != null) body['notes'] = notes;
+
+      // DEBUG: API 요청 로그
+      print('[환자 정보 업데이트] patientId: $patientId, body: $body');
 
       final response = await _apiClient.patch(
         '${ApiConfig.patientsEndpoint}$patientId/',

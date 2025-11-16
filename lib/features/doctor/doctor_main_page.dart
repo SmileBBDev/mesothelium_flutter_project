@@ -8,6 +8,8 @@ import '../../core/service/patient_service.dart';
 import 'ai_prediction_summary.dart';
 import 'header_section.dart';
 import 'my_schedule_card.dart';
+import 'doctor_patients_list.dart';
+
 class DoctorMainPage extends StatefulWidget{
   static String url = '/doctorMain';
   final AuthUser? user;
@@ -16,6 +18,7 @@ class DoctorMainPage extends StatefulWidget{
   @override
   _DoctorMainPageState createState() => _DoctorMainPageState();
 }
+
 class _DoctorMainPageState extends State<DoctorMainPage> {
   List<Patient> myPatients = [];
   bool isLoading = true;
@@ -44,32 +47,53 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
 
   @override
   Widget build(BuildContext context){
-    return SingleChildScrollView(
-      child:Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DoctorHeaderSection(username : widget.user?.username),
-          isLoading
-            ? const Center(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('${widget.user?.username ?? "의사"} 님'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: '진료 일정', icon: Icon(Icons.calendar_today)),
+              Tab(text: '담당 환자', icon: Icon(Icons.people)),
+              Tab(text: 'ML 예측', icon: Icon(Icons.analytics)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // 1. 진료 일정 탭
+            SingleChildScrollView(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "진료 일정 로딩 중입니다...",
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  isLoading
+                    ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text(
+                              "진료 일정 로딩 중입니다...",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    : MyScheduleCard(userId: widget.user?.userId, patients: myPatients),
                 ],
               ),
-            )
-            : MyScheduleCard(userId: widget.user?.userId, patients: myPatients,),
-
-          const SizedBox(height: defaultPadding * 2),
-          const AiPredictSummary(),
-          const SizedBox(height: defaultPadding * 2),
-          //AiPredictSection(),
-        ],
+            ),
+            // 2. 담당 환자 탭
+            DoctorPatientsList(user: widget.user),
+            // 3. ML 예측 탭
+            const AiPredictSummary(),
+          ],
+        ),
       ),
     );
   }
