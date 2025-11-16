@@ -9,7 +9,14 @@ class AuthUser {
   final int? userId;
   final String username;
   final String role;
-  AuthUser({this.userId, required this.username, required this.role});
+  final int? doctorId; // 의사 ID (role이 doctor일 때만 사용)
+
+  AuthUser({
+    this.userId,
+    required this.username,
+    required this.role,
+    this.doctorId,
+  });
 }
 
 class AuthService {
@@ -42,11 +49,21 @@ class AuthService {
       final refresh = (resp.data['refresh'] ?? '') as String;
       await _api.setTokens(access, refresh);
 
+      // 응답에서 user 정보 추출
+      final userData = resp.data['user'];
+      int? doctorId;
+
+      // role이 doctor이고 doctor 정보가 있으면 doctor ID 추출
+      if (userData != null && userData['role'] == 'doctor' && userData['doctor'] != null) {
+        doctorId = _toInt(userData['doctor']['id']);
+      }
+
       // 토큰으로 유저 복원 (payload에 username/role 없으면 폴백)
       final user = _parseAuthUserFromAccess(
         access,
         fallbackUsername: username,
         fallbackRole: 'general',
+        doctorId: doctorId,
       );
       return user;
     } on DioException catch (e) {
@@ -130,12 +147,14 @@ class AuthService {
       String access, {
         String? fallbackUsername,
         String? fallbackRole,
+        int? doctorId,
       }) {
     final payload = Jwt.parseJwt(access);
     return AuthUser(
       userId: _toInt(payload['user_id']),
       username: (payload['username'] ?? fallbackUsername ?? '') as String,
       role: (payload['role'] ?? fallbackRole ?? 'general') as String,
+      doctorId: doctorId,
     );
   }
 
@@ -143,5 +162,10 @@ class AuthService {
     if (v == null) return null;
     if (v is int) return v;
     return int.tryParse('$v');
+  }
+
+  /// 현재 저장된 액세스 토큰 반환
+  Future<String?> getAccessToken() async {
+    return await _api.storage.read(key: 'access');
   }
 }

@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import '../../constants.dart';
 import 'medical_document_editor.dart';
+import '../../core/service/auth_service.dart';
 
 class PatientCard extends StatelessWidget {
   final List<Map<String, String>> patients; // 환자 데이터 정보 받기
-  const PatientCard({super.key, required this.patients});
+  final AuthUser? user; // 의사 정보
+  const PatientCard({super.key, required this.patients, this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class PatientCard extends StatelessWidget {
               final birthYear = p["birth_year"];
               final age = birthYear != null ? (DateTime.now().year - (birthYear as int)) : null;
               final phone = p["phone"]?.toString() ?? "";
-              final patientId = p["id"] as int? ?? 0;
+              final patientId = int.tryParse(p["id"]?.toString() ?? "0") ?? 0;
 
               return Column(
                 children: [
@@ -67,6 +69,7 @@ class PatientCard extends StatelessWidget {
                             patientId: patientId,
                             patientName: name,
                             patientInfo: age != null ? "$name ($age세)" : name,
+                            user: user,
                           ),
                         ),
                       );

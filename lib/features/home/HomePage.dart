@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
             PatientMainPage(onCategorySelected: _onCategorySelected),
             PharmacyView(),
             MyAppointments(),
-            PredictionResult(),
+            PredictionResult(user: widget.user),
             MyInfoPage(user: widget.user,),
           ];
 

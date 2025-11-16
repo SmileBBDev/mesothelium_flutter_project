@@ -1,8 +1,12 @@
 // 의사: 담당 환자 목록 페이지
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../core/service/patient_service.dart';
 import '../../core/service/auth_service.dart';
 import '../../core/service/ml_service.dart';
+import '../../core/service/prescription_service.dart';
+import '../../core/service/api_config.dart';
 
 class DoctorPatientsList extends StatefulWidget {
   final AuthUser? user;
@@ -152,6 +156,11 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    icon: const Icon(Icons.description, color: Colors.purple),
+                    onPressed: () => _showPrescriptionListDialog(patient),
+                    tooltip: '진료 기록 조회',
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.edit_note, color: Colors.blue),
                     onPressed: () => _showPrescriptionDialog(patient),
                     tooltip: '진료 기록 작성',
@@ -167,6 +176,140 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
           );
         },
       ),
+    );
+  }
+
+  void _showPrescriptionListDialog(Map<String, dynamic> patient) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('${patient['name']} - 진료 기록 목록'),
+          content: SizedBox(
+            width: 600,
+            height: 400,
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: PrescriptionService().getPrescriptionsByPatient(patient['id'] as int),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('오류: ${snapshot.error}'),
+                  );
+                }
+
+                final prescriptions = snapshot.data ?? [];
+
+                if (prescriptions.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.description_outlined, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('작성된 진료 기록이 없습니다'),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: prescriptions.length,
+                  itemBuilder: (context, index) {
+                    final prescription = prescriptions[index];
+                    final createdAt = prescription['created_at']?.toString() ?? '';
+                    final doctorName = prescription['doctor_username']?.toString() ?? '알 수 없음';
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.note_alt, color: Colors.blue),
+                        title: Text(
+                          prescription['title']?.toString() ?? '제목 없음',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('작성자: $doctorName'),
+                            Text('작성일: ${createdAt.substring(0, createdAt.length > 10 ? 10 : createdAt.length)}'),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.visibility, color: Colors.green),
+                          onPressed: () {
+                            Navigator.pop(dialogContext);
+                            _showPrescriptionDetailDialog(prescription);
+                          },
+                          tooltip: '상세보기',
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('닫기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPrescriptionDetailDialog(Map<String, dynamic> prescription) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(prescription['title']?.toString() ?? '제목 없음'),
+          content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '작성자: ${prescription['doctor_username']?.toString() ?? '알 수 없음'}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '작성일: ${prescription['created_at']?.toString().substring(0, 10) ?? ''}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const Divider(height: 24),
+                  const Text(
+                    '내용:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    prescription['content_delta']?.toString() ?? '내용 없음',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('닫기'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -238,17 +381,59 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
     String content,
   ) async {
     try {
-      // TODO: Prescription API 호출 구현 필요
-      // 현재는 임시 메시지만 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${patient['name']}님의 진료 기록이 저장되었습니다\n(API 구현 예정)'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
+      // 로딩 인디케이터 표시
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('진료 기록 저장 중...'),
+              ],
+            ),
+          );
+        },
       );
+
+      // Prescription API 호출
+      final prescriptionService = PrescriptionService();
+      final response = await prescriptionService.createPrescription(
+        patientId: patient['id'] as int,
+        doctorId: widget.user?.doctorId ?? 0,
+        title: title,
+        contentDelta: content, // 단순 텍스트를 그대로 전달
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${patient['name']}님의 진료 기록이 저장되었습니다'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('진료 기록 저장 실패: ${response.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
+
+      // 로딩 다이얼로그가 열려있으면 닫기
+      Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('진료 기록 저장 실패: $e'),
@@ -262,49 +447,105 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('${patient['name']} - ML 예측'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.analytics, size: 64, color: Colors.blue),
-              SizedBox(height: 16),
-              Text('ML 예측 기능을 실행하시겠습니까?'),
-              SizedBox(height: 8),
-              Text(
-                '환자의 의료 데이터를 분석하여 예측 결과를 생성합니다.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('취소'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _runMLPrediction(patient);
-              },
-              child: const Text('실행'),
-            ),
-          ],
+        return _MLPredictionDialogContent(
+          patient: patient,
+          user: widget.user,
         );
       },
     );
   }
+}
 
-  void _runMLPrediction(Map<String, dynamic> patient) {
-    // ML 입력 데이터 입력 다이얼로그 먼저 표시
-    _showMLInputDialog(patient);
+class _MLPredictionDialogContent extends StatefulWidget {
+  final Map<String, dynamic> patient;
+  final AuthUser? user;
+
+  const _MLPredictionDialogContent({
+    required this.patient,
+    this.user,
+  });
+
+  @override
+  State<_MLPredictionDialogContent> createState() => _MLPredictionDialogContentState();
+}
+
+class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> {
+  late Future<List<Map<String, dynamic>>> _predictionsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPredictions();
   }
 
-  void _showMLInputDialog(Map<String, dynamic> patient) {
+  void _loadPredictions() {
+    setState(() {
+      _predictionsFuture = _fetchPredictionResults(widget.patient['id'] as int);
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPredictionResults(int patientId) async {
+    try {
+      final url = '${ApiConfig.baseUrl}${ApiConfig.predictionsEndpoint}?patient_id=$patientId';
+      debugPrint('[ML 예측 조회] URL: $url');
+
+      // 토큰 가져오기
+      final token = await AuthService().getAccessToken();
+      if (token == null) {
+        debugPrint('[ML 예측 조회] 토큰이 없습니다');
+        return [];
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('[ML 예측 조회] Status: ${response.statusCode}');
+      debugPrint('[ML 예측 조회] Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final dynamic responseData = json.decode(response.body);
+        debugPrint('[ML 예측 조회] Response type: ${responseData.runtimeType}');
+
+        if (responseData is List) {
+          debugPrint('[ML 예측 조회] List 형태, 개수: ${responseData.length}');
+          return responseData.cast<Map<String, dynamic>>();
+        } else if (responseData is Map) {
+          debugPrint('[ML 예측 조회] Map 형태, keys: ${responseData.keys}');
+          if (responseData.containsKey('results')) {
+            final results = responseData['results'];
+            if (results is List) {
+              debugPrint('[ML 예측 조회] Paginated response, 개수: ${results.length}');
+              return results.cast<Map<String, dynamic>>();
+            }
+          } else {
+            debugPrint('[ML 예측 조회] Single object, wrapping in list');
+            return [responseData as Map<String, dynamic>];
+          }
+        }
+      }
+      debugPrint('[ML 예측 조회] 빈 배열 반환');
+      return [];
+    } catch (e) {
+      debugPrint('[ML 예측 결과 조회 오류] $e');
+      rethrow;
+    }
+  }
+
+  void _runMLPrediction() {
+    Navigator.pop(context); // 다이얼로그 닫기
+    _showMLInputDialog();
+  }
+
+  void _showMLInputDialog() {
     // ML 모델에 필요한 11개 필드
     final controllers = {
-      'age': TextEditingController(text: patient['birth_year'] != null
-          ? (DateTime.now().year - (patient['birth_year'] as int)).toString()
+      'age': TextEditingController(text: widget.patient['birth_year'] != null
+          ? (DateTime.now().year - (widget.patient['birth_year'] as int)).toString()
           : ''),
       'duration_of_symptoms': TextEditingController(),
       'platelet_count': TextEditingController(),
@@ -322,78 +563,31 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('${patient['name']} - ML 예측 데이터 입력'),
+          title: Text('${widget.patient['name']} - ML 예측 데이터 입력'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: controllers['age'],
-                  decoration: const InputDecoration(labelText: '나이 (Age)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: controllers['duration_of_symptoms'],
-                  decoration: const InputDecoration(labelText: '증상 지속 기간 (일)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: controllers['platelet_count'],
-                  decoration: const InputDecoration(labelText: '혈소판 수 (PLT)'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['cell_count'],
-                  decoration: const InputDecoration(labelText: '백혈구 수 (WBC)'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['blood_ldh'],
-                  decoration: const InputDecoration(labelText: '혈액 LDH'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['pleural_ldh'],
-                  decoration: const InputDecoration(labelText: '흉막 LDH'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['pleural_protein'],
-                  decoration: const InputDecoration(labelText: '흉막 단백질'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['total_protein'],
-                  decoration: const InputDecoration(labelText: '총 단백질'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['albumin'],
-                  decoration: const InputDecoration(labelText: '알부민'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['crp'],
-                  decoration: const InputDecoration(labelText: 'CRP'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                TextField(
-                  controller: controllers['asbestos_exposure'],
-                  decoration: const InputDecoration(labelText: '석면 노출 기간 (년)'),
-                  keyboardType: TextInputType.number,
-                ),
+                TextField(controller: controllers['age'], decoration: const InputDecoration(labelText: '나이 (Age)'), keyboardType: TextInputType.number),
+                TextField(controller: controllers['duration_of_symptoms'], decoration: const InputDecoration(labelText: '증상 지속 기간 (일)'), keyboardType: TextInputType.number),
+                TextField(controller: controllers['platelet_count'], decoration: const InputDecoration(labelText: '혈소판 수 (PLT)'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['cell_count'], decoration: const InputDecoration(labelText: '백혈구 수 (WBC)'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['blood_ldh'], decoration: const InputDecoration(labelText: '혈액 LDH'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['pleural_ldh'], decoration: const InputDecoration(labelText: '흉막 LDH'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['pleural_protein'], decoration: const InputDecoration(labelText: '흉막 단백질'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['total_protein'], decoration: const InputDecoration(labelText: '총 단백질'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['albumin'], decoration: const InputDecoration(labelText: '알부민'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['crp'], decoration: const InputDecoration(labelText: 'CRP'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                TextField(controller: controllers['asbestos_exposure'], decoration: const InputDecoration(labelText: '석면 노출 기간 (년)'), keyboardType: TextInputType.number),
               ],
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('취소'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('취소')),
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                await _executeMLPrediction(patient, controllers);
+                await _executeMLPrediction(controllers);
               },
               child: const Text('예측 실행'),
             ),
@@ -403,33 +597,13 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
     );
   }
 
-  Future<void> _executeMLPrediction(
-    Map<String, dynamic> patient,
-    Map<String, TextEditingController> controllers,
-  ) async {
-    // ML 예측 로딩 다이얼로그 표시
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('ML 모델 실행 중...'),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> _executeMLPrediction(Map<String, TextEditingController> controllers) async {
+    showDialog(context: context, barrierDismissible: false, builder: (ctx) => const AlertDialog(content: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(), SizedBox(height: 16), Text('ML 모델 실행 중...')])));
 
     try {
-      // ML API 호출
       final mlService = MlService();
       final result = await mlService.predictSingle(
-        patientId: patient['id'] as int,
+        patientId: widget.patient['id'] as int,
         age: int.tryParse(controllers['age']!.text) ?? 0,
         durationOfSymptoms: int.tryParse(controllers['duration_of_symptoms']!.text) ?? 0,
         plateletCount: double.tryParse(controllers['platelet_count']!.text) ?? 0.0,
@@ -444,75 +618,163 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
       );
 
       if (!mounted) return;
-      Navigator.pop(context); // 로딩 다이얼로그 닫기
+      Navigator.pop(context); // 로딩 닫기
 
       if (result.success) {
         final label = result.firstLabel;
         final proba = result.firstProbability;
 
-        // 결과 표시
-        showDialog(
+        // 예측 성공 - 목록 새로고침
+        _loadPredictions();
+
+        // 결과 다이얼로그 표시 후 다시 예측 목록 다이얼로그 열기
+        await showDialog(
           context: context,
-          builder: (dialogContext) {
-            return AlertDialog(
-              title: const Text('ML 예측 결과'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    label == 1 ? Icons.warning : Icons.check_circle,
-                    size: 64,
-                    color: label == 1 ? Colors.orange : Colors.green,
-                  ),
-                  const SizedBox(height: 16),
-                  Text('${patient['name']}님의 예측 결과'),
-                  const SizedBox(height: 8),
-                  Text(
-                    '예측: ${label == 1 ? "악성 (Malignant)" : "양성 (Benign)"}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '확률: ${(proba! * 100).toStringAsFixed(2)}%',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '자세한 결과는 예측 결과 탭에서 확인하세요.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('확인'),
-                ),
+          builder: (ctx) => AlertDialog(
+            title: const Text('ML 예측 결과'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(label == 1 ? Icons.warning : Icons.check_circle, size: 64, color: label == 1 ? Colors.orange : Colors.green),
+                const SizedBox(height: 16),
+                Text('${widget.patient['name']}님의 예측 결과'),
+                const SizedBox(height: 8),
+                Text('예측: ${label == 1 ? "악성 (Malignant)" : "양성 (Benign)"}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('확률: ${(proba! * 100).toStringAsFixed(2)}%', style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 16),
+                const Text('결과가 저장되었습니다.', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
-            );
-          },
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ML 예측 실패: ${result.message}'),
-            backgroundColor: Colors.red,
+            ),
+            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인'))],
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ML 예측 실패: ${result.message}'), backgroundColor: Colors.red));
       }
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // 로딩 다이얼로그 닫기
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('ML 예측 실행 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ML 예측 실행 실패: $e'), backgroundColor: Colors.red));
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('${widget.patient['name']} - ML 예측'),
+      content: SizedBox(
+        width: 600,
+        height: 450,
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _predictionsFuture,
+          builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('오류: ${snapshot.error}'),
+                      ],
+                    ),
+                  );
+                }
+
+                final predictions = snapshot.data ?? [];
+
+                return Column(
+                  children: [
+                    // 기존 예측 결과 목록
+                    Expanded(
+                      child: predictions.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.analytics_outlined, size: 64, color: Colors.grey),
+                                  SizedBox(height: 16),
+                                  Text('저장된 예측 결과가 없습니다'),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: predictions.length,
+                              itemBuilder: (context, index) {
+                                final pred = predictions[index];
+                                final label = pred['output_label'] ?? 0;
+                                final probability = pred['output_proba'] ?? 0.0;
+                                final createdAt = pred['created_at']?.toString() ?? '';
+
+                                // requested_by_doctor는 객체이므로 중첩 접근
+                                String doctorName = '알 수 없음';
+                                if (pred['requested_by_doctor'] != null) {
+                                  final doctor = pred['requested_by_doctor'];
+                                  if (doctor is Map && doctor.containsKey('username')) {
+                                    doctorName = doctor['username']?.toString() ?? '알 수 없음';
+                                  }
+                                }
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  color: label == 1 ? Colors.orange[50] : Colors.green[50],
+                                  child: ListTile(
+                                    leading: Icon(
+                                      label == 1 ? Icons.warning : Icons.check_circle,
+                                      color: label == 1 ? Colors.orange : Colors.green,
+                                      size: 36,
+                                    ),
+                                    title: Text(
+                                      label == 1 ? '악성 (Malignant)' : '양성 (Benign)',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('확률: ${(probability * 100).toStringAsFixed(2)}%'),
+                                        Text('진단의: $doctorName'),
+                                        Text('진단일: ${createdAt.substring(0, createdAt.length > 10 ? 10 : createdAt.length)}'),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    const Divider(height: 24),
+                    // 새 예측 실행 버튼
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.add_chart),
+                        label: const Text('새 예측 실행'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: _runMLPrediction,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('닫기'),
+            ),
+          ],
+        );
   }
 }

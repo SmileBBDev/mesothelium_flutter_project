@@ -7,11 +7,13 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../constants.dart';
 import '../../core/model/patient.dart';
 import '../../core/utils/parseReservationDate.dart';
+import '../../core/service/auth_service.dart';
 
 class MyScheduleCard extends StatefulWidget {
   final int? userId;
   final List<Patient> patients;
-  const MyScheduleCard({super.key, this.userId, required this.patients});
+  final AuthUser? user;
+  const MyScheduleCard({super.key, this.userId, required this.patients, this.user});
 
   @override
   State<MyScheduleCard> createState() => _MyScheduleCardState();
@@ -45,7 +47,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         startTime: startTime,
         endTime: startTime.add(Duration(minutes: 30)),
         subject: p.name ?? "",
-        notes: "${p.createdByUsername ?? '등록자 없음'} | ${age != null ? '$age세' : '나이 모름'} | ${p.gender ?? '성별 미기입'} ",
+        notes: "${p.id} | ${p.createdByUsername ?? '등록자 없음'} | ${age != null ? '$age세' : '나이 모름'} | ${p.gender ?? '성별 미기입'} ",
         color: Colors.indigoAccent,
       );
     }).toList();
@@ -57,18 +59,21 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         a.startTime.month == date.month &&
         a.startTime.day == date.day);
 
-    return events.map((a) => {
-      "time":
-      "${a.startTime.hour.toString().padLeft(2, '0')}:${a.startTime.minute.toString().padLeft(2, '0')} - ${a.endTime.hour.toString().padLeft(2, '0')}:${a.endTime.minute.toString().padLeft(2, '0')}",
-      "name": a.subject,
-      "dept": a.notes?.split('|').first.trim() ?? "",
-      "age": a.notes
-          ?.split('|')
-          .last
-          .trim()
-          .replaceAll(RegExp(r'[^0-9]'), '') ??
-          "",
-      "gender": (a.notes ?? "").contains("M") ? "남성" : "여성",
+    return events.map((a) {
+      final parts = a.notes?.split('|') ?? [];
+      // notes 형식: "patientId | 등록자 | 나이 | 성별"
+      final patientId = parts.isNotEmpty ? parts[0].trim() : "0";
+      final age = parts.length > 2 ? parts[2].trim().replaceAll(RegExp(r'[^0-9]'), '') : "";
+      final gender = parts.length > 3 && parts[3].contains("M") ? "남성" : "여성";
+
+      return {
+        "id": patientId,  // ⭐ patient ID 추가
+        "time": "${a.startTime.hour.toString().padLeft(2, '0')}:${a.startTime.minute.toString().padLeft(2, '0')} - ${a.endTime.hour.toString().padLeft(2, '0')}:${a.endTime.minute.toString().padLeft(2, '0')}",
+        "name": a.subject,
+        "dept": parts.length > 1 ? parts[1].trim() : "",
+        "age": age,
+        "gender": gender,
+      };
     }).toList();
   }
 
@@ -165,7 +170,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
         // 일정 목록
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: PatientCard(patients: selectedEvents),
+          child: PatientCard(patients: selectedEvents, user: widget.user),
 
         ),
       ],

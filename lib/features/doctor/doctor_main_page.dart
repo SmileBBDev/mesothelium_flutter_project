@@ -77,7 +77,7 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
                         ),
                       ),
                     )
-                    : MyScheduleCard(userId: widget.user?.userId, patients: widget.patients ?? []),
+                    : MyScheduleCard(userId: widget.user?.userId, patients: widget.patients ?? [], user: widget.user),
                 ],
               ),
             ),

@@ -1,12 +1,14 @@
 // 의사용 간단한 진료 문서 작성 페이지
 import 'package:flutter/material.dart';
-import '../../core/service/medical_record_service.dart';
+import '../../core/service/prescription_service.dart';
+import '../../core/service/auth_service.dart';
 
 class MedicalDocumentEditor extends StatefulWidget {
   final int patientId;
   final String patientName;
   final String patientInfo;
   final int? recordId; // 기존 기록 수정 시 전달
+  final AuthUser? user; // 의사 정보
 
   const MedicalDocumentEditor({
     super.key,
@@ -14,6 +16,7 @@ class MedicalDocumentEditor extends StatefulWidget {
     required this.patientName,
     required this.patientInfo,
     this.recordId,
+    this.user,
   });
 
   @override
@@ -21,7 +24,7 @@ class MedicalDocumentEditor extends StatefulWidget {
 }
 
 class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
-  final MedicalRecordService _service = MedicalRecordService();
+  final PrescriptionService _service = PrescriptionService();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
 
@@ -45,19 +48,18 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
     });
 
     // 기존 문서 불러오기
-    final result = await _service.getMedicalRecord(widget.recordId!);
+    final record = await _service.getPrescriptionDetail(widget.recordId!);
 
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
 
-      if (result.success && result.record != null) {
-        final record = result.record!;
+      if (record != null) {
         _titleController.text = record['title'] ?? '';
-        _contentController.text = record['content_html'] ?? '';
+        _contentController.text = record['content_delta'] ?? '';
       } else {
-        _showSnackBar(result.message ?? '문서 로드 실패', isError: true);
+        _showSnackBar('문서 로드 실패', isError: true);
       }
     }
   }
@@ -71,43 +73,60 @@ class _MedicalDocumentEditorState extends State<MedicalDocumentEditor> {
       return;
     }
 
+    // 의사 ID 확인
+    final doctorId = widget.user?.doctorId;
+    if (doctorId == null) {
+      _showSnackBar('의사 정보를 찾을 수 없습니다', isError: true);
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      MedicalRecordResult result;
-
       if (widget.recordId == null) {
         // 새 기록 생성
-        result = await _service.createMedicalRecord(
+        final response = await _service.createPrescription(
           patientId: widget.patientId,
+          doctorId: doctorId,
           title: title.isNotEmpty
               ? title
               : '진료 기록 ${DateTime.now().toString().substring(0, 10)}',
-          contentDeltaJson: {},  // 빈 Delta JSON (HTML만 사용)
-          contentHtml: content,
+          contentDelta: content,
         );
+
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+
+          if (response.success) {
+            _showSnackBar('진료 문서가 저장되었습니다.');
+            Navigator.pop(context, true);
+          } else {
+            _showSnackBar(response.message ?? '저장 실패', isError: true);
+          }
+        }
       } else {
         // 기존 기록 수정
-        result = await _service.updateMedicalRecord(
-          recordId: widget.recordId!,
+        final response = await _service.updatePrescription(
+          prescriptionId: widget.recordId!,
           title: title.isNotEmpty ? title : null,
-          contentHtml: content,
+          contentDelta: content,
         );
-      }
 
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
 
-        if (result.success) {
-          _showSnackBar(result.message ?? '진료 문서가 저장되었습니다.');
-          // 저장 후 뒤로가기
-          Navigator.pop(context, true);
-        } else {
-          _showSnackBar(result.message ?? '저장 실패', isError: true);
+          if (response.success) {
+            _showSnackBar('진료 문서가 수정되었습니다.');
+            Navigator.pop(context, true);
+          } else {
+            _showSnackBar(response.message ?? '수정 실패', isError: true);
+          }
         }
       }
     } catch (e) {
