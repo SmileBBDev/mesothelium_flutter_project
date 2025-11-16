@@ -99,6 +99,7 @@ class _HomePageState extends State<HomePage> {
               user: widget.user,
               patients: myPatients,
               isLoading: isLoading,
+              onPatientsChanged: _loadPatients,
             ),
             MyAllPatientView(
               patients: myPatients,

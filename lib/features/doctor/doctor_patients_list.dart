@@ -6,8 +6,9 @@ import '../../core/service/ml_service.dart';
 
 class DoctorPatientsList extends StatefulWidget {
   final AuthUser? user;
+  final Future<void> Function()? onPatientsChanged;
 
-  const DoctorPatientsList({super.key, this.user});
+  const DoctorPatientsList({super.key, this.user, this.onPatientsChanged});
 
   @override
   State<DoctorPatientsList> createState() => _DoctorPatientsListState();
@@ -282,7 +283,12 @@ class _DoctorPatientsListState extends State<DoctorPatientsList> {
             backgroundColor: Colors.green,
           ),
         );
+        // 로컬 환자 목록 새로고침
         await _loadPatients();
+        // HomePage의 환자 목록도 새로고침 (진료 일정 탭 업데이트용)
+        if (widget.onPatientsChanged != null) {
+          await widget.onPatientsChanged!();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

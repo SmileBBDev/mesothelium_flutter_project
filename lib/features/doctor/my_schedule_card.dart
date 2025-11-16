@@ -32,7 +32,10 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
     _selectedDate  = DateTime(_today.year, _today.month, _today.day);
 
     // DB에서 받아온 데이터 기준으로 진료 일정 생성
-    _appointments = widget.patients.map((p) {
+    // ✅ reservation_date가 null이 아닌 환자만 일정으로 추가
+    _appointments = widget.patients
+        .where((p) => p.reservationDate != null)
+        .map((p) {
       // DB 저장된 날짜를 DateTime으로 변환
       final DateTime startTime = parseReservationDate(p.reservationDate);
 

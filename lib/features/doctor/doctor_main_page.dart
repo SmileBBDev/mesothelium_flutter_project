@@ -15,12 +15,14 @@ class DoctorMainPage extends StatefulWidget{
   final AuthUser? user;
   final List<Patient>? patients;
   final bool? isLoading;
+  final Future<void> Function()? onPatientsChanged;
+
   const DoctorMainPage({
     super.key,
     this.user,
     this.patients,
-    this.isLoading
-
+    this.isLoading,
+    this.onPatientsChanged,
   });
 
   @override
@@ -80,7 +82,10 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
               ),
             ),
             // 2. 담당 환자 탭
-            DoctorPatientsList(user: widget.user),
+            DoctorPatientsList(
+              user: widget.user,
+              onPatientsChanged: widget.onPatientsChanged,
+            ),
             // 3. ML 예측 탭
             const AiPredictSummary(),
           ],
