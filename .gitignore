@@ -104,6 +104,9 @@ web/build/
 # ================================================
 .env
 .env.*
+!.env.example
+# ↑ .env.example만 Git에 커밋 허용 (실제 키는 포함 안 됨)
+
 *.keystore
 *.pem
 *.p12

@@ -1,5 +1,6 @@
 // 환자용 ML 예측 결과 조회 페이지
 import 'package:flutter/material.dart';
+import '../../core/service/prediction_service.dart';
 
 class MlPredictionResultPage extends StatefulWidget {
   final int patientId;
@@ -30,35 +31,26 @@ class _MlPredictionResultPageState extends State<MlPredictionResultPage> {
       _errorMessage = null;
     });
 
-    // TODO: API 연동 - 환자의 예측 결과 목록 조회
-    // prediction_service.dart에서 getPredictionsByPatient() 메서드 구현 필요
+    try {
+      final result = await PredictionService().getPredictionsByPatient(widget.patientId);
 
-    // 임시 목 데이터
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        // 임시 데이터
-        _predictions = [
-          {
-            'id': 1,
-            'created_at': '2025-11-15 10:30:00',
-            'model_name': 'meso_xgb',
-            'output_label': 0,
-            'output_proba': 0.23,
-            'requested_by_doctor': '김의사',
-          },
-          {
-            'id': 2,
-            'created_at': '2025-11-10 14:20:00',
-            'model_name': 'meso_xgb',
-            'output_label': 0,
-            'output_proba': 0.18,
-            'requested_by_doctor': '김의사',
-          },
-        ];
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (result.success) {
+            _predictions = result.predictions ?? [];
+          } else {
+            _errorMessage = result.message ?? '예측 결과를 불러오는 데 실패했습니다.';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = '예측 결과를 불러오는 중 오류가 발생했습니다: $e';
+        });
+      }
     }
   }
 

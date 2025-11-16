@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_diease_app/features/doctor/patient_card.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-
-import '../../constants.dart';
 import '../../core/model/patient.dart';
-import '../../core/utils/parseReservationDate.dart';
+import '../../core/utils/parse_reservation_date.dart';
 import '../../core/service/auth_service.dart';
 
 class MyScheduleCard extends StatefulWidget {
@@ -157,7 +155,7 @@ class _MyScheduleCardState extends State<MyScheduleCard> {
               ),
               todayHighlightColor: Colors.grey,
               selectionDecoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.3),
+                color: Colors.blue.withValues(alpha: 0.3),
                 shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(100),
 

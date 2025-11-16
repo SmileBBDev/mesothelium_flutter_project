@@ -1,11 +1,10 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '../../constants.dart';
 
 import 'available_doctor_section.dart';
 import 'category_section.dart';
-import 'HeaderSection.dart';
+import 'header_section_patient.dart';
 
 import '../patient/page/DiseaseView.dart';
 import '../patient/page/MyAppointments.dart';

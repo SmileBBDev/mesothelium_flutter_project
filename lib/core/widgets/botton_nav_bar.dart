@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import '../constants/MenuCategory.dart';
+import '../constants/menu_category.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int currentIndex;
@@ -51,7 +51,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF3B5AFE).withOpacity(0.15)
+                    ? const Color(0xFF3B5AFE).withValues(alpha: 0.15)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),

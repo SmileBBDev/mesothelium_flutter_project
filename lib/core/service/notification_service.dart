@@ -295,6 +295,7 @@ class NotificationService {
     required DateTime scheduledTime,
   }) async {
     try {
+      // ignore: unused_local_variable
       final id = int.tryParse(notification.id) ??
           DateTime.now().millisecondsSinceEpoch % 100000;
 
@@ -312,6 +313,7 @@ class NotificationService {
         presentSound: true,
       );
 
+      // ignore: unused_local_variable
       final details = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
@@ -439,18 +441,6 @@ class NotificationService {
   /// 모든 알림 삭제
   void clearAllNotifications() {
     _notifications.clear();
-  }
-
-  /// 알림 타입 파싱
-  NotificationType _parseNotificationType(dynamic type) {
-    if (type == null) return NotificationType.systemNotice;
-    if (type is String) {
-      return NotificationType.values.firstWhere(
-        (e) => e.toString().split('.').last == type,
-        orElse: () => NotificationType.systemNotice,
-      );
-    }
-    return NotificationType.systemNotice;
   }
 
   /// 우선순위를 Importance로 매핑

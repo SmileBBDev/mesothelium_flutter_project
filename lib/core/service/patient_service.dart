@@ -7,9 +7,7 @@ class PatientService {
   final BaseConfig _api = BaseConfig();
   final ApiClient _apiClient = ApiClient();
 
-  /**
-   * 의사에 맞는 환자 조회 api
-   */
+  /// 의사에 맞는 환자 조회 api
   Future<List<Patient>> getMyPatients(int? doctorId) async {
     final resp = await _api.dio.get('/api/patients/?by-doctor=$doctorId');
     return (resp.data as List)

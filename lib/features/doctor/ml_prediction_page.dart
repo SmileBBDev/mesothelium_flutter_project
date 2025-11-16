@@ -1,8 +1,6 @@
 // 의사용 ML 예측 페이지 - 환자 선택 및 검사 데이터 입력 (11개 base_features)
 import 'package:flutter/material.dart';
 import '../../core/service/ml_service.dart';
-import '../../core/service/patient_service.dart';
-import '../../core/model/patient.dart';
 
 class MlPredictionPage extends StatefulWidget {
   final int? preselectedPatientId;
@@ -21,7 +19,6 @@ class MlPredictionPage extends StatefulWidget {
 class _MlPredictionPageState extends State<MlPredictionPage> {
   final _formKey = GlobalKey<FormState>();
   final _mlService = MlService();
-  final _patientService = PatientService();
 
   // 선택된 환자 정보
   int? _selectedPatientId;

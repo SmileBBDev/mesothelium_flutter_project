@@ -3,7 +3,6 @@ import 'dart:convert';
 // import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
 import '../../config/base_config.dart';
 import 'error_handler.dart';

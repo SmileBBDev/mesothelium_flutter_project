@@ -1,0 +1,39 @@
+# Flutter 빌드 명령어 가이드
+
+## 환경 변수 설명
+- ENVIRONMENT: 환경 구분 (development/staging/production)
+- API_BASE_URL: Django 백엔드 서버 주소
+- VWORLD_API_KEY: 지도 서비스 API 키
+
+## 사용 시나리오
+
+### 1. 로컬 개발 (지도 없이 백엔드만 테스트)
+flutter run --dart-define=API_BASE_URL=http://192.168.1.100:8000
+
+### 2. 로컬 개발 (지도 포함 완전 테스트)
+flutter run \
+  --dart-define=ENVIRONMENT=development \
+  --dart-define=API_BASE_URL=http://192.168.1.100:8000 \
+  --dart-define=VWORLD_API_KEY=개발용_API_키
+
+### 3. 스테이징 서버로 테스터 배포
+flutter build apk \
+  --dart-define=ENVIRONMENT=staging \
+  --dart-define=API_BASE_URL=http://34.61.113.204 \
+  --dart-define=VWORLD_API_KEY=스테이징_API_키
+
+### 4. Play Store 프로덕션 배포 (최종)
+flutter build appbundle --release \
+  --dart-define=ENVIRONMENT=production \
+  --dart-define=API_BASE_URL=https://api.production.com \
+  --dart-define=VWORLD_API_KEY=프로덕션_API_키
+
+## 현재 기본값 (환경 변수 없이 빌드 시)
+- API_BASE_URL: http://34.61.113.204 (GCP 배포 서버)
+- VWORLD_API_KEY: '' (빈 값 - 지도 작동 안 함)
+
+## 주의사항
+⚠️ 프로덕션 배포 시 반드시 모든 환경 변수를 설정하세요!
+⚠️ API 키는 절대 Git에 커밋하지 마세요!
+
+

@@ -1,10 +1,9 @@
-/**
- * base_config.dart
- * 기본 설정 값 모음
- */
+/// base_config.dart
+/// 기본 설정 값 모음
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'env_config.dart';
 
 class BaseConfig{
 
@@ -13,8 +12,8 @@ class BaseConfig{
   factory BaseConfig() => _i;
   BaseConfig._();
 
-  // GCP 배포 서버 (Nginx 80포트)
-  static String baseUrl = 'http://34.61.113.204';
+  // API Base URL (환경 변수에서 로드)
+  static String baseUrl = EnvConfig.apiBaseUrl;
 
   // 로컬 개발 서버 - 로컬 개발 시 사용
   // static String baseUrl = 'http://localhost:8000';
@@ -116,9 +115,8 @@ class BaseConfig{
 
   FlutterSecureStorage get storage => _storage;
 
-
-
-  static String vWorldKey = '0CFB4211-C4B2-3C4D-B3D9-CBB71FFB3CE9'; // 26년 5월 만료
-  static String vWorldUrl = 'https://api.vworld.kr/req/wmts/1.0.0/<APIKEY>/Base/{z}/{y}/{x}.png';
+  // vWorld API 설정 (환경 변수에서 로드)
+  static String vWorldKey = EnvConfig.vWorldApiKey;
+  static String vWorldUrl = EnvConfig.vWorldUrl;
 
 }

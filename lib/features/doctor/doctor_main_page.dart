@@ -1,12 +1,8 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../../constants.dart';
 import '../../core/model/patient.dart';
 import '../../core/service/auth_service.dart';
-import '../../core/service/patient_service.dart';
 import 'ai_prediction_summary.dart';
-import 'header_section.dart';
 import 'my_schedule_card.dart';
 import 'doctor_patients_list.dart';
 

@@ -3,7 +3,7 @@ import 'package:flutter_diease_app/features/auth/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/provider/auth_provider.dart';
-import '../home/HomePage.dart';
+import '../home/home_page.dart';
 import 'components/sign_up_form.dart';
 
 class SignUpScreen extends StatefulWidget {

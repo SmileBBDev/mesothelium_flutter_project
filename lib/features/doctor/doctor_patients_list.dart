@@ -479,9 +479,11 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
   }
 
   void _loadPredictions() {
-    setState(() {
-      _predictionsFuture = _fetchPredictionResults(widget.patient['id'] as int);
-    });
+    if (mounted) {
+      setState(() {
+        _predictionsFuture = _fetchPredictionResults(widget.patient['id'] as int);
+      });
+    }
   }
 
   Future<List<Map<String, dynamic>>> _fetchPredictionResults(int patientId) async {
@@ -625,7 +627,9 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
         final proba = result.firstProbability;
 
         // 예측 성공 - 목록 새로고침
-        _loadPredictions();
+        if (mounted) {
+          _loadPredictions();
+        }
 
         // 결과 다이얼로그 표시 후 다시 예측 목록 다이얼로그 열기
         await showDialog(

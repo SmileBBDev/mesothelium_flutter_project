@@ -1,9 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../../constants.dart';
-import '../../core/widgets/botton_nav_bar.dart';
-import 'ApprovalPage.dart';
 
 class AdminMainPage extends StatefulWidget{
   static String url = '/adminMain';
@@ -142,7 +138,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               blurRadius: 6,
               offset: Offset(0, 3),
             ),

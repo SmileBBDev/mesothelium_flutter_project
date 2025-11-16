@@ -93,7 +93,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: LoadingIndicator(message: message),
           ),
       ],
@@ -247,8 +247,8 @@ class LoadingDialog {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
+      builder: (context) => PopScope(
+        canPop: false,
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,

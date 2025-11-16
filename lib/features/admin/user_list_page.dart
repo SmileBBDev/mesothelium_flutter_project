@@ -88,24 +88,6 @@ class _UserListPageState extends State<UserListPage> {
     }
   }
 
-  /// 역할 변환 함수 (한국어 → API role)
-  String? _getRoleValue(String roleText) {
-    switch (roleText) {
-      case '일반':
-        return 'general';
-      case '환자':
-        return 'patient';
-      case '의사':
-        return 'doctor';
-      case '원무과':
-        return 'staff';
-      case '관리자':
-        return 'admin';
-      default:
-        return null;
-    }
-  }
-
   List<Map<String, dynamic>> get _filteredUsers {
     return allUsers.where((user) {
       final username = user['username'] ?? '';
