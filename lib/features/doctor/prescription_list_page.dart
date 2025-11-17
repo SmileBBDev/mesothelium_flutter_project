@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../core/service/prescription_service.dart';
 import '../../core/service/auth_service.dart';
+import '../../core/service/patient_service.dart';
 import 'prescription_editor_page.dart';
 
 class PrescriptionListPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class PrescriptionListPage extends StatefulWidget {
 class _PrescriptionListPageState extends State<PrescriptionListPage> {
   final PrescriptionService _prescriptionService = PrescriptionService();
   final AuthService _authService = AuthService();
+  final PatientService _patientService = PatientService();
 
   List<Map<String, dynamic>> _prescriptions = [];
   bool _isLoading = true;
@@ -105,21 +107,106 @@ class _PrescriptionListPageState extends State<PrescriptionListPage> {
     }
   }
 
-  void _navigateToEditor({int? prescriptionId, int? patientId}) async {
-    final result = await Navigator.push<bool>(
+  void _navigateToEditor({int? prescriptionId, int? patientId, Map<String, dynamic>? patientInfo}) async {
+    int? selectedPatientId = patientId;
+    Map<String, dynamic>? selectedPatientInfo = patientInfo;
+
+    // 새 처방전 작성 시 환자 선택
+    if (prescriptionId == null && patientId == null) {
+      final result = await _showPatientSelectionDialog();
+      if (result == null) {
+        // 환자 선택 취소
+        return;
+      }
+      selectedPatientId = result['id'];
+      selectedPatientInfo = result;
+    }
+
+    if (!mounted) return;
+
+    final navigateResult = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => PrescriptionEditorPage(
           prescriptionId: prescriptionId,
-          patientId: patientId,
+          patientId: selectedPatientId,
           doctorId: _currentDoctorId,
+          patientInfo: selectedPatientInfo,
         ),
       ),
     );
 
-    if (result == true) {
+    if (navigateResult == true) {
       _loadPrescriptions();
     }
+  }
+
+  Future<Map<String, dynamic>?> _showPatientSelectionDialog() async {
+    // 환자 목록 불러오기
+    final result = await _patientService.getAllPatients();
+
+    if (!result.success || result.patients == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? '환자 목록을 불러올 수 없습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return null;
+    }
+
+    final patients = result.patients!;
+
+    if (patients.isEmpty) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('등록된 환자가 없습니다.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return null;
+    }
+
+    return await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('환자 선택'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: patients.length,
+            itemBuilder: (context, index) {
+              final patient = patients[index];
+              final name = patient['name'] ?? patient['username'] ?? '이름 없음';
+              final email = patient['email'] ?? '';
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                title: Text(name),
+                subtitle: email.isNotEmpty ? Text(email) : null,
+                onTap: () => Navigator.pop(context, patient),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('취소'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatDateTime(String? dateTimeStr) {

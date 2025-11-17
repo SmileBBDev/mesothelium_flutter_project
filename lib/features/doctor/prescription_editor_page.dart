@@ -6,12 +6,14 @@ class PrescriptionEditorPage extends StatefulWidget {
   final int? prescriptionId; // null이면 새 처방전 작성
   final int? patientId;
   final int? doctorId;
+  final Map<String, dynamic>? patientInfo;
 
   const PrescriptionEditorPage({
     super.key,
     this.prescriptionId,
     this.patientId,
     this.doctorId,
+    this.patientInfo,
   });
 
   @override
@@ -25,12 +27,16 @@ class _PrescriptionEditorPageState extends State<PrescriptionEditorPage> {
 
   bool _isLoading = false;
   bool _isSaving = false;
+  Map<String, dynamic>? _patientInfo;
 
   @override
   void initState() {
     super.initState();
     if (widget.prescriptionId != null) {
       _loadPrescription();
+    } else if (widget.patientInfo != null) {
+      // 새 처방전 작성 시, 환자 정보 설정
+      _patientInfo = widget.patientInfo;
     }
   }
 
@@ -46,6 +52,14 @@ class _PrescriptionEditorPageState extends State<PrescriptionEditorPage> {
         final prescription = result.prescription!;
         _titleController.text = prescription['title'] ?? '';
         _contentController.text = prescription['content_delta'] ?? '';
+
+        // 환자 정보도 로드
+        final patientData = prescription['patient'];
+        if (patientData != null && patientData is Map<String, dynamic>) {
+          setState(() {
+            _patientInfo = patientData;
+          });
+        }
       } else {
         _showSnackBar(result.message ?? '처방전을 불러오는데 실패했습니다', isError: true);
       }
@@ -159,6 +173,60 @@ class _PrescriptionEditorPageState extends State<PrescriptionEditorPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 환자 정보 카드
+              if (_patientInfo != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          (_patientInfo!['name'] ?? _patientInfo!['username'] ?? '?')[0].toUpperCase(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.person, size: 16, color: Colors.blue),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '환자: ${_patientInfo!['name'] ?? _patientInfo!['username'] ?? '이름 없음'}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_patientInfo!['email'] != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                _patientInfo!['email'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // 제목 입력
               TextField(
                 controller: _titleController,

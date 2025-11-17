@@ -96,6 +96,16 @@ class UserManagementService {
       message: response.message ?? '사용자 정보를 불러올 수 없습니다.',
     );
   }
+
+  // 사용자 정보 업데이트
+  Future<ApiResponse> updateUser(int userId, Map<String, dynamic> updateData) async {
+    final response = await _apiClient.patch(
+      '${ApiConfig.usersEndpoint}$userId/',
+      body: updateData,
+    );
+
+    return response;
+  }
 }
 
 class UsersResult {
