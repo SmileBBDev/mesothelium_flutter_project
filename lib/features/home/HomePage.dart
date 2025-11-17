@@ -16,6 +16,7 @@ import '../patient/page/MyAppointments.dart';
 import '../patient/page/PharmacyView.dart';
 import '../patient/page/PredictionResult.dart';
 import '../patient/prescription_view_page.dart';
+import '../staff/staff_main_page.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
@@ -88,9 +89,7 @@ class _HomePageState extends State<HomePage> {
       switch (widget.user.role) {
         case 'staff':
           return [
-            AdminMainPage(onTabSelected: _onNavItemTapped),
-            ApprovalPage(),
-            UserListPage(),
+            StaffMainPage(),
             MyInfoPage(user: widget.user)
           ];
         case 'general':
