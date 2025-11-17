@@ -67,6 +67,66 @@ class _MlPredictionPageState extends State<MlPredictionPage> {
     super.dispose();
   }
 
+  Future<void> _testMLConnection() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 테스트용 환자 ID (1로 가정)
+      final testPatientId = _selectedPatientId ?? 1;
+
+      print('Testing ML connection...');
+      print('Using patient ID: $testPatientId');
+
+      final result = await _mlService.predictSingle(
+        patientId: testPatientId,
+        age: 65,
+        durationOfSymptoms: 3,
+        plateletCount: 250.0,
+        cellCount: 7000.0,
+        bloodLacticDehydrogenise: 180.0,
+        pleuralLacticDehydrogenise: 200.0,
+        pleuralProtein: 4.5,
+        totalProtein: 7.0,
+        albumin: 3.8,
+        cReactiveProtein: 1.2,
+        durationOfAsbestosExposure: 10,
+      );
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ML 서버 연결 성공! 정상 작동합니다.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('ML 서버 오류: ${result.message}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ML 연결 테스트 실패:\n$e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _runPrediction() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -106,21 +166,35 @@ class _MlPredictionPageState extends State<MlPredictionPage> {
         if (result.success) {
           _showPredictionResult(result);
         } else {
+          // 상세한 에러 메시지 표시
+          final errorMsg = result.message ?? 'ML 예측 실패';
+          final errorType = result.errorType?.toString() ?? 'UNKNOWN';
+
+          print('ML Prediction Error: $errorMsg');
+          print('Error Type: $errorType');
+          print('Result data: ${result.result}');
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result.message ?? 'ML 예측 실패'),
+              content: Text('$errorMsg\n(오류 타입: $errorType)'),
               backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
             ),
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (mounted) {
         setState(() => _isLoading = false);
+
+        print('ML Prediction Exception: $e');
+        print('Stack trace: $stackTrace');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('예측 중 오류 발생: $e'),
+            content: Text('예측 중 오류 발생:\n$e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -280,6 +354,13 @@ class _MlPredictionPageState extends State<MlPredictionPage> {
       appBar: AppBar(
         title: const Text('중피종 ML 예측'),
         backgroundColor: Colors.blue[700],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: _testMLConnection,
+            tooltip: 'ML 연결 테스트',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -23,12 +23,15 @@ const List<MenuCategory> patientMenu = [
   MenuCategory(icon: "assets/icons/Pediatrician.svg", title: "근처 약국", url: "/pharmacy"),
   MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "진료 예약", url: "/myAppointments"),
   MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "진단 결과", url: "/predictionResult"),
+  MenuCategory(icon: "assets/icons/Menu.svg", title: "내 처방전", url: "/myPrescription"),
   MenuCategory(icon: "assets/icons/notifications.svg", title: "내 정보", url: "/myInfo"),
 ];
 
 const List<MenuCategory> doctorMenu = [
   MenuCategory(icon: "assets/icons/home.svg", title: "진료", url: "/doctorMain"),
   MenuCategory(icon: "assets/icons/Neurosurgeon.svg", title: "전체 환자", url: "/myAllPatient"),
+  MenuCategory(icon: "assets/icons/Psychiatrist.svg", title: "진단 결과", url: "/predictionResult"),
+  MenuCategory(icon: "assets/icons/Cardiologist.svg", title: "처방전", url: "/prescription"),
   MenuCategory(icon: "assets/icons/notifications.svg", title: "내 정보", url: "/myInfo"),
 ];
 

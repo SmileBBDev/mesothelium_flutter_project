@@ -37,6 +37,12 @@ class ApiConfig {
   // 진료 기록 엔드포인트
   static const String medicalRecordsEndpoint = '/api/patients/records/';
 
+  // 처방전 엔드포인트
+  static const String prescriptionsEndpoint = '/api/prescriptions/';
+  static const String prescriptionsByPatientEndpoint = '/api/prescriptions/by-patient/';
+  static const String prescriptionsByDoctorEndpoint = '/api/prescriptions/by-doctor/';
+  static const String uploadImageEndpoint = '/api/upload-image/';
+
   // ML 엔드포인트 (Django 프록시를 통해 Flask ML 서버 호출)
   static const String mlSchemaEndpoint = '/api/ml/schema/';
   static const String mlPredictEndpoint = '/api/ml/predict/';

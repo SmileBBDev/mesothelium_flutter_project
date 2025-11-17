@@ -10,11 +10,12 @@ import '../admin/admin_main_page.dart';
 import '../common/pages/my_info.dart';
 import '../doctor/doctor_main_page.dart';
 import '../doctor/page/MyAllPatientView.dart';
+import '../doctor/prescription_list_page.dart';
 import '../patient/Patient_main_page.dart';
 import '../patient/page/MyAppointments.dart';
 import '../patient/page/PharmacyView.dart';
 import '../patient/page/PredictionResult.dart';
-import '../staff/EnrollPatientPage.dart';
+import '../patient/prescription_view_page.dart';
 
 class HomePage extends StatefulWidget {
   static String url = '/homePage';
@@ -64,12 +65,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onCategorySelected(String route) {
+    // 환자 role
     if (route == '/pharmacy') {
       setState(() => _selectedIndex = 1);
     } else if (route == '/myAppointments') {
       setState(() => _selectedIndex = 2);
     } else if (route == '/predictionResult') {
-      setState(() => _selectedIndex = 3);
+      // 환자는 index 3, 의사는 index 2
+      if (widget.user.role == 'doctor') {
+        setState(() => _selectedIndex = 2);
+      } else {
+        setState(() => _selectedIndex = 3);
+      }
     }
   }
 
@@ -79,10 +86,13 @@ class _HomePageState extends State<HomePage> {
     /// 환자데이터 로딩 후 doctor 화면이 정상 업데이트됨.
     final List<Widget> pages = () {
       switch (widget.user.role) {
-        case 'staff' :
+        case 'staff':
           return [
-            EnrollPatientPage(),
-            MyInfoPage(user: widget.user,) ];
+            AdminMainPage(onTabSelected: _onNavItemTapped),
+            ApprovalPage(),
+            UserListPage(),
+            MyInfoPage(user: widget.user)
+          ];
         case 'general':
         case 'patient':
           return [
@@ -90,6 +100,7 @@ class _HomePageState extends State<HomePage> {
             PharmacyView(),
             MyAppointments(),
             PredictionResult(),
+            PrescriptionViewPage(),
             MyInfoPage(user: widget.user,),
           ];
 
@@ -99,11 +110,14 @@ class _HomePageState extends State<HomePage> {
               user: widget.user,
               patients: myPatients,
               isLoading: isLoading,
+              onCategorySelected: _onCategorySelected,
             ),
             MyAllPatientView(
               patients: myPatients,
               isLoading: isLoading,
             ),
+            PredictionResult(),
+            PrescriptionListPage(),
             MyInfoPage(user: widget.user),
           ];
 
@@ -128,7 +142,7 @@ class _HomePageState extends State<HomePage> {
     final List<MenuCategory> menuList = () {
       switch (widget.user.role) {
         case 'staff':
-          return staffManu;
+          return adminMenu;
         case 'general':
         case 'patient':
           return patientMenu;

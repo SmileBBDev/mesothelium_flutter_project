@@ -13,12 +13,14 @@ class DoctorMainPage extends StatefulWidget{
   final AuthUser? user;
   final List<Patient>? patients;
   final bool? isLoading;
+  final Function(String)? onCategorySelected;
+
   const DoctorMainPage({
     super.key,
     this.user,
     this.patients,
-    this.isLoading
-
+    this.isLoading,
+    this.onCategorySelected,
   });
 
   @override
@@ -57,7 +59,7 @@ class _DoctorMainPageState extends State<DoctorMainPage> {
               : MyScheduleCard(userId: widget.user?.userId, patients: widget.patients ?? []),
 
           const SizedBox(height: defaultPadding * 2),
-          const AiPredictSummary(),
+          AiPredictSummary(onTap: widget.onCategorySelected),
           const SizedBox(height: defaultPadding * 2),
           //AiPredictSection(),
         ],
