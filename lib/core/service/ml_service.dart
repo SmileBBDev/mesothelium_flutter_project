@@ -54,10 +54,19 @@ class MlService {
         body['model_name'] = modelName;
       }
 
+      print('[ML 예측 요청] Patient ID: $patientId');
+      print('[ML 예측 요청] Data: $data');
+      print('[ML 예측 요청] Body: $body');
+
       final response = await _apiClient.post(
         ApiConfig.mlPredictEndpoint,
         body: body,
       );
+
+      print('[ML 예측 응답] Success: ${response.success}');
+      print('[ML 예측 응답] Status: ${response.statusCode}');
+      print('[ML 예측 응답] Data: ${response.data}');
+      print('[ML 예측 응답] Message: ${response.errorMessage}');
 
       if (response.success && response.data != null) {
         return MlPredictResult(
@@ -72,6 +81,7 @@ class MlService {
         errorType: response.errorType,
       );
     } catch (e) {
+      print('[ML 예측 오류] Exception: $e');
       final appError = ErrorHandler.handleException(e);
       ErrorHandler.logError(appError);
       return MlPredictResult(

@@ -539,7 +539,7 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
   }
 
   void _runMLPrediction() {
-    Navigator.pop(context); // 다이얼로그 닫기
+    // 다이얼로그를 닫지 않고 데이터 입력 다이얼로그 표시
     _showMLInputDialog();
   }
 
@@ -560,6 +560,10 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
       'crp': TextEditingController(),
       'asbestos_exposure': TextEditingController(),
     };
+
+    // State context를 미리 캡처
+    final stateContext = context;
+    final patientData = widget.patient;
 
     showDialog(
       context: context,
@@ -588,8 +592,98 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
             TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('취소')),
             ElevatedButton(
               onPressed: () async {
-                Navigator.pop(dialogContext);
-                await _executeMLPrediction(controllers);
+                // 입력 다이얼로그 닫기
+                Navigator.of(dialogContext).pop();
+
+                // 로딩 다이얼로그 표시 (캡처된 context 사용)
+                showDialog(
+                  context: stateContext,
+                  barrierDismissible: false,
+                  builder: (loadingCtx) => const AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('ML 모델 실행 중...')
+                      ]
+                    )
+                  )
+                );
+
+                try {
+                  final mlService = MlService();
+                  final result = await mlService.predictSingle(
+                    patientId: patientData['id'] as int,
+                    age: int.tryParse(controllers['age']!.text) ?? 0,
+                    durationOfSymptoms: int.tryParse(controllers['duration_of_symptoms']!.text) ?? 0,
+                    plateletCount: double.tryParse(controllers['platelet_count']!.text) ?? 0.0,
+                    cellCount: double.tryParse(controllers['cell_count']!.text) ?? 0.0,
+                    bloodLacticDehydrogenise: double.tryParse(controllers['blood_ldh']!.text) ?? 0.0,
+                    pleuralLacticDehydrogenise: double.tryParse(controllers['pleural_ldh']!.text) ?? 0.0,
+                    pleuralProtein: double.tryParse(controllers['pleural_protein']!.text) ?? 0.0,
+                    totalProtein: double.tryParse(controllers['total_protein']!.text) ?? 0.0,
+                    albumin: double.tryParse(controllers['albumin']!.text) ?? 0.0,
+                    cReactiveProtein: double.tryParse(controllers['crp']!.text) ?? 0.0,
+                    durationOfAsbestosExposure: int.tryParse(controllers['asbestos_exposure']!.text) ?? 0,
+                  );
+
+                  if (!mounted) return;
+                  Navigator.of(stateContext).pop(); // 로딩 다이얼로그 닫기
+
+                  if (result.success) {
+                    final label = result.firstLabel;
+                    final proba = result.firstProbability;
+
+                    // 예측 성공 - 목록 새로고침
+                    if (mounted) {
+                      _loadPredictions();
+                    }
+
+                    if (!mounted) return;
+
+                    // 결과 다이얼로그 표시
+                    await showDialog(
+                      context: stateContext,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('ML 예측 결과'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(label == 1 ? Icons.warning : Icons.check_circle, size: 64, color: label == 1 ? Colors.orange : Colors.green),
+                            const SizedBox(height: 16),
+                            Text('${patientData['name']}님의 예측 결과'),
+                            const SizedBox(height: 8),
+                            Text('예측: ${label == 1 ? "악성 (Malignant)" : "양성 (Benign)"}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text('확률: ${(proba! * 100).toStringAsFixed(2)}%', style: const TextStyle(fontSize: 16)),
+                            const SizedBox(height: 16),
+                            const Text('결과가 저장되었습니다.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인'))],
+                      ),
+                    );
+                  } else {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(stateContext).showSnackBar(
+                      SnackBar(
+                        content: Text('ML 예측 실패: ${result.message}'),
+                        backgroundColor: Colors.red
+                      )
+                    );
+                  }
+                } catch (e) {
+                  if (!mounted) return;
+                  Navigator.of(stateContext).pop(); // 로딩 다이얼로그 닫기
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(stateContext).showSnackBar(
+                    SnackBar(
+                      content: Text('ML 예측 실행 실패: $e'),
+                      backgroundColor: Colors.red
+                    )
+                  );
+                }
               },
               child: const Text('예측 실행'),
             ),
@@ -597,70 +691,6 @@ class _MLPredictionDialogContentState extends State<_MLPredictionDialogContent> 
         );
       },
     );
-  }
-
-  Future<void> _executeMLPrediction(Map<String, TextEditingController> controllers) async {
-    showDialog(context: context, barrierDismissible: false, builder: (ctx) => const AlertDialog(content: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(), SizedBox(height: 16), Text('ML 모델 실행 중...')])));
-
-    try {
-      final mlService = MlService();
-      final result = await mlService.predictSingle(
-        patientId: widget.patient['id'] as int,
-        age: int.tryParse(controllers['age']!.text) ?? 0,
-        durationOfSymptoms: int.tryParse(controllers['duration_of_symptoms']!.text) ?? 0,
-        plateletCount: double.tryParse(controllers['platelet_count']!.text) ?? 0.0,
-        cellCount: double.tryParse(controllers['cell_count']!.text) ?? 0.0,
-        bloodLacticDehydrogenise: double.tryParse(controllers['blood_ldh']!.text) ?? 0.0,
-        pleuralLacticDehydrogenise: double.tryParse(controllers['pleural_ldh']!.text) ?? 0.0,
-        pleuralProtein: double.tryParse(controllers['pleural_protein']!.text) ?? 0.0,
-        totalProtein: double.tryParse(controllers['total_protein']!.text) ?? 0.0,
-        albumin: double.tryParse(controllers['albumin']!.text) ?? 0.0,
-        cReactiveProtein: double.tryParse(controllers['crp']!.text) ?? 0.0,
-        durationOfAsbestosExposure: int.tryParse(controllers['asbestos_exposure']!.text) ?? 0,
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // 로딩 닫기
-
-      if (result.success) {
-        final label = result.firstLabel;
-        final proba = result.firstProbability;
-
-        // 예측 성공 - 목록 새로고침
-        if (mounted) {
-          _loadPredictions();
-        }
-
-        // 결과 다이얼로그 표시 후 다시 예측 목록 다이얼로그 열기
-        await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('ML 예측 결과'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(label == 1 ? Icons.warning : Icons.check_circle, size: 64, color: label == 1 ? Colors.orange : Colors.green),
-                const SizedBox(height: 16),
-                Text('${widget.patient['name']}님의 예측 결과'),
-                const SizedBox(height: 8),
-                Text('예측: ${label == 1 ? "악성 (Malignant)" : "양성 (Benign)"}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('확률: ${(proba! * 100).toStringAsFixed(2)}%', style: const TextStyle(fontSize: 16)),
-                const SizedBox(height: 16),
-                const Text('결과가 저장되었습니다.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('확인'))],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ML 예측 실패: ${result.message}'), backgroundColor: Colors.red));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ML 예측 실행 실패: $e'), backgroundColor: Colors.red));
-    }
   }
 
   @override
